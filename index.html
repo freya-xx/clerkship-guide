@@ -19,7 +19,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   // ============================================================
@@ -37,19 +37,30 @@
 };
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
 
-  // Enable offline persistence
-  enableIndexedDbPersistence(db).catch(err => {
-    if (err.code === 'failed-precondition') console.warn('Persistence failed: multiple tabs open');
-    else if (err.code === 'unimplemented') console.warn('Browser does not support persistence');
-  });
+  // Use persistent cache (replaces deprecated enableIndexedDbPersistence)
+  let db;
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+  } catch(e) {
+    db = getFirestore(app);
+  }
+
+  const auth = getAuth(app);
 
   // Expose to global scope
   window._firebase = { db, auth, doc, setDoc, getDoc, onSnapshot, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged };
   window._firebaseReady = true;
-  document.dispatchEvent(new Event('firebaseReady'));
+  // Module scripts are deferred — the main script's event listener may not be
+  // registered yet when this fires. Delay dispatch until after all scripts run.
+  const _notifyReady = () => document.dispatchEvent(new Event('firebaseReady'));
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _notifyReady);
+  } else {
+    requestAnimationFrame(_notifyReady);
+  }
 </script>
 
 <style>
@@ -813,7 +824,7 @@ tr:hover td { background: var(--bg-secondary); }
   <span class="toolbar-spacer"></span>
   <div class="sync-status local" id="syncStatus">⬤ Local</div>
   <button class="toolbar-btn" onclick="openModal('authModal')" id="authBtn">👤 Sign In</button>
-  <button class="toolbar-btn danger-btn" onclick="signOutUser()" id="signOutBtn" style="display:none;">👤 Sign Out</button>
+  <button class="toolbar-btn danger-btn" onclick="signOutUser()" id="signOutBtn" style="display:none;">Sign Out</button>
   <button class="toolbar-btn" onclick="exportData()" title="Download backup JSON">💾 Backup</button>
   <button class="toolbar-btn" onclick="document.getElementById('importFile').click()" title="Import backup">📂 Import</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
@@ -1419,7 +1430,7 @@ if ('serviceWorker' in navigator) {
 // ============================================================
 // FIREBASE AUTH & SYNC
 // ============================================================
-document.addEventListener('firebaseReady', () => {
+function initFirebaseAuth() {
   const { auth, onAuthStateChanged } = window._firebase;
 
   onAuthStateChanged(auth, user => {
@@ -1439,7 +1450,14 @@ document.addEventListener('firebaseReady', () => {
       if (firestoreUnsub) { firestoreUnsub(); firestoreUnsub = null; }
     }
   });
-});
+}
+
+// Handle both cases: Firebase already ready, or not yet
+if (window._firebaseReady) {
+  initFirebaseAuth();
+} else {
+  document.addEventListener('firebaseReady', initFirebaseAuth);
+}
 
 function setSyncStatus(state) {
   const el = document.getElementById('syncStatus');
