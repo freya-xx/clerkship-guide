@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Clerkship Rotation Guide</title>
+<meta name="description" content="Fully customizable interactive clerkship rotation guide">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clerkship">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap">
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ============================================================
+  // PASTE YOUR FIREBASE CONFIG HERE
+  // (Replace all values below with your own from Firebase Console)
+  // ============================================================
+  const firebaseConfig = {
+  apiKey: "AIzaSyBItwKxbtYqduTIAypYYn5vgOU5KAWrxz8",
+  authDomain: "clerkie-cecaf.firebaseapp.com",
+  databaseURL: "https://clerkie-cecaf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "clerkie-cecaf",
+  storageBucket: "clerkie-cecaf.firebasestorage.app",
+  messagingSenderId: "815043681005",
+  appId: "1:815043681005:web:295ecb33aacc5f5e614ae4"
+};
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Enable offline persistence
+  enableIndexedDbPersistence(db).catch(err => {
+    if (err.code === 'failed-precondition') console.warn('Persistence failed: multiple tabs open');
+    else if (err.code === 'unimplemented') console.warn('Browser does not support persistence');
+  });
+
+  // Expose to global scope
+  window._firebase = { db, auth, doc, setDoc, getDoc, onSnapshot, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged };
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f9fa;
+  --bg-tertiary: #edf1f3;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --bg-danger: #FCEBEB;
+  --text-danger: #A32D2D;
+  --bg-warning: #FAEEDA;
+  --text-warning: #854F0B;
+  --bg-info: #E6F1FB;
+  --text-info: #185FA5;
+  --bg-success: #EAF3DE;
+  --text-success: #2D6A4F;
+  --bg-purple: #F3EFFE;
+  --text-purple: #6B21A8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --transition: all 0.2s ease;
+}
+
+body.dark-mode {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-tertiary: #252836;
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #6b7280;
+  --border: #2d3748;
+  --border-light: #1f2937;
+  --bg-danger: #3b1212;
+  --text-danger: #fca5a5;
+  --bg-warning: #3b2000;
+  --text-warning: #fcd34d;
+  --bg-info: #0f2845;
+  --text-info: #93c5fd;
+  --bg-success: #0f2d20;
+  --text-success: #6ee7b7;
+  --bg-purple: #2d1b4e;
+  --text-purple: #c4b5fd;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  transition: background 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===================== TOOLBAR ===================== */
+.global-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  align-items: center;
+  flex-wrap: wrap;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.toolbar-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 5px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--transition);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+.toolbar-btn:hover { background: var(--bg-tertiary); transform: translateY(-1px); }
+.toolbar-btn:active { transform: translateY(0); }
+.toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.toolbar-btn.primary { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+.toolbar-btn.primary:hover { opacity: 0.85; }
+.toolbar-btn.danger-btn { background: var(--bg-danger); color: var(--text-danger); border-color: var(--text-danger); }
+
+.toolbar-spacer { flex: 1; }
+
+/* ===================== SYNC STATUS ===================== */
+.sync-status {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sync-status.synced { background: var(--bg-success); color: var(--text-success); }
+.sync-status.syncing { background: var(--bg-warning); color: var(--text-warning); }
+.sync-status.offline { background: var(--bg-danger); color: var(--text-danger); }
+.sync-status.local { background: var(--bg-tertiary); color: var(--text-secondary); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sync-spin { display: inline-block; animation: spin 1s linear infinite; }
+
+/* ===================== HEADER ===================== */
+.header {
+  padding: 1.2rem 1.5rem 0.8rem;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.header-text h1 { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
+.header-text p { font-size: 12px; color: var(--text-secondary); }
+
+/* ===================== SEARCH + FILTER ===================== */
+.search-filter-bar {
+  padding: 10px 1rem;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 14px;
+  pointer-events: none;
+}
+.search-wrapper input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+.search-wrapper input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+}
+body.dark-mode .search-wrapper input:focus {
+  box-shadow: 0 0 0 3px rgba(243,244,246,0.08);
+}
+.search-wrapper input::placeholder { color: var(--text-tertiary); }
+
+/* Filter Pills Row */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.filter-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-family: 'DM Mono', monospace;
+  margin-right: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.filter-pill {
+  padding: 3px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.filter-pill:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.filter-pill.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+
+/* ===================== ROTATION NAV ===================== */
+.rotation-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 1rem;
+  border-bottom: 1px solid var(--border-light);
+  overflow-x: auto;
+}
+.nav-btn {
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.nav-btn.active { background: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); font-weight: 500; }
+
+/* ===================== CONTENT ===================== */
+.content { padding: 1.2rem 1rem; }
+
+.rotation-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rotation-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-info);
+  color: var(--text-info);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+.rotation-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 1.2rem;
+  cursor: text;
+}
+.rotation-subtitle[contenteditable="true"]:focus {
+  outline: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.sections-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* ===================== SECTION CARDS ===================== */
+.section-card {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.section-card:hover { box-shadow: var(--shadow-md); }
+.section-card.drag-over { border: 2px dashed var(--text-primary); background: var(--bg-secondary); }
+.section-card.dragging { opacity: 0.5; }
+
+.section-header {
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: default;
+}
+.section-header-title {
+  flex: 1;
+  min-width: 0;
+}
+.section-header-title[contenteditable="true"]:focus {
+  outline: 1px dashed var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* Section type badge */
+.section-type-badge {
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.badge-mnemonic { background: var(--bg-purple); color: var(--text-purple); }
+.badge-lab { background: var(--bg-success); color: var(--text-success); }
+.badge-procedure { background: var(--bg-warning); color: var(--text-warning); }
+.badge-emergency { background: var(--bg-danger); color: var(--text-danger); }
+.badge-normal-values { background: var(--bg-info); color: var(--text-info); }
+.badge-tips { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  padding: 0 3px;
+  flex-shrink: 0;
+}
+.drag-handle:active { cursor: grabbing; }
+
+.section-controls {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: var(--transition);
+  line-height: 1;
+}
+.action-btn:hover { background: var(--border); color: var(--text-primary); }
+.section-icon { font-size: 15px; flex-shrink: 0; cursor: pointer; }
+
+/* ===================== ITEMS ===================== */
+.section-body { padding: 12px 14px; }
+
+.item-list { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.item-list li {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border-left: 2.5px solid var(--border);
+  background: var(--bg-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.55;
+  transition: var(--transition);
+}
+.item-list li:hover { border-left-color: var(--text-tertiary); }
+
+.item-content { flex-grow: 1; min-width: 0; }
+.item-content[contenteditable="true"] { cursor: text; }
+.item-content[contenteditable="true"]:focus {
+  outline: none;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.item-controls {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.item-list li:hover .item-controls { opacity: 1; }
+@media (hover: none) { .item-controls { opacity: 1; } }
+
+.danger-item { background: var(--bg-danger) !important; border-left-color: var(--text-danger) !important; }
+.highlight { background: var(--bg-warning) !important; border-left-color: var(--text-warning) !important; }
+.info-item { background: var(--bg-info) !important; border-left-color: var(--text-info) !important; }
+.success-item { background: var(--bg-success) !important; border-left-color: var(--text-success) !important; }
+
+/* ===================== LABELS & PILLS ===================== */
+.label {
+  font-size: 10px;
+  font-weight: 500;
+  font-family: 'DM Mono', monospace;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+  color: var(--text-secondary);
+  display: inline-block;
+}
+.pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-right: 3px;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.pill-red { background: var(--bg-danger); color: var(--text-danger); }
+.pill-blue { background: var(--bg-info); color: var(--text-info); }
+.pill-amber { background: var(--bg-warning); color: var(--text-warning); }
+.pill-green { background: var(--bg-success); color: var(--text-success); }
+
+/* ===================== MNEMONIC BOX ===================== */
+.mnemonic-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin: 6px 0;
+  background: var(--bg-secondary);
+  position: relative;
+}
+.mnemonic-box-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mnemonic-box:hover .mnemonic-box-controls { opacity: 1; }
+.mnemonic-title {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+  font-family: 'DM Mono', monospace;
+}
+.mnemonic-word {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+.mnemonic-breakdown { font-size: 12px; color: var(--text-secondary); line-height: 2; }
+.mnemonic-breakdown span { font-weight: 600; color: var(--text-primary); }
+
+/* ===================== PROCEDURE STEPS ===================== */
+.procedure-block { margin-bottom: 14px; position: relative; }
+.procedure-block-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.procedure-block:hover .procedure-block-controls { opacity: 1; }
+.procedure-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.procedure-steps {
+  counter-reset: steps;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.procedure-steps li {
+  counter-increment: steps;
+  padding: 7px 10px 7px 36px;
+  position: relative;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.procedure-steps li::before {
+  content: counter(steps);
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===================== TABLE ===================== */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  margin-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th {
+  background: var(--bg-secondary);
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+}
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+  line-height: 1.5;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg-secondary); }
+
+/* ===================== ADD SECTION BUTTON ===================== */
+.add-section-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+  transition: var(--transition);
+  margin-top: 4px;
+}
+.add-section-btn:hover { border-color: var(--text-primary); color: var(--text-primary); background: var(--bg-secondary); }
+
+/* ===================== MODALS ===================== */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+.modal {
+  background: var(--bg-primary);
+  padding: 22px;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: modalSlide 0.2s ease;
+}
+.modal-lg { max-width: 600px; max-height: 85vh; overflow-y: auto; }
+@keyframes modalSlide { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal h3 { margin-bottom: 14px; font-size: 16px; font-weight: 600; }
+.modal label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; margin-top: 10px; }
+
+.modal select, .modal textarea, .modal input[type="text"], .modal input[type="email"], .modal input[type="password"] {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  transition: var(--transition);
+}
+.modal select:focus, .modal textarea:focus, .modal input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.07);
+}
+.modal textarea { resize: vertical; min-height: 90px; font-family: 'DM Sans', sans-serif; }
+
+.modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* ===================== AUTH PANEL ===================== */
+.auth-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 1rem;
+  background: var(--bg-info);
+  border-bottom: 1px solid var(--text-info);
+  font-size: 12px;
+  color: var(--text-info);
+}
+.auth-banner button {
+  background: var(--text-info);
+  color: white;
+  border: none;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ===================== EMPTY / SEARCH STATES ===================== */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-tertiary);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 1rem; }
+.empty-state p { font-size: 14px; }
+
+/* ===================== TOAST ===================== */
+.toast-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.toast {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.2s ease;
+  max-width: 280px;
+}
+@keyframes toastIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast.error { background: var(--text-danger); }
+.toast.success { background: var(--text-success); color: white; }
+
+/* ===================== INSTALL BANNER ===================== */
+.install-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.install-banner.show { display: flex; }
+
+/* ===================== SECTION COLLAPSE ===================== */
+.section-body.collapsed { display: none; }
+.collapse-btn { cursor: pointer; user-select: none; }
+
+/* ===================== CONTEXT MENU ===================== */
+.context-menu {
+  position: fixed;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  z-index: 2000;
+  min-width: 180px;
+  overflow: hidden;
+  animation: modalSlide 0.1s ease;
+}
+.context-menu-item {
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.context-menu-item:hover { background: var(--bg-secondary); }
+.context-menu-item.danger { color: var(--text-danger); }
+.context-menu-divider { border-top: 1px solid var(--border-light); margin: 3px 0; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (min-width: 768px) {
+  .sections-grid { grid-template-columns: repeat(2, 1fr); }
+  .global-toolbar { flex-wrap: nowrap; }
+}
+@media (min-width: 1200px) {
+  .sections-grid { grid-template-columns: repeat(2, 1fr); }
+  .content { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- Install Banner -->
+<div class="install-banner" id="installBanner">
+  📲 <strong>Install App</strong> — Get offline access on this device
+  <button class="toolbar-btn primary" id="installBtn" onclick="installApp()">Install</button>
+  <button class="toolbar-btn" onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
+</div>
+
+<!-- Auth Banner (shown when not logged in) -->
+<div class="auth-banner" id="authBanner" style="display:none;">
+  <span>🔒 Sign in to sync across your devices</span>
+  <button onclick="openModal('authModal')">Sign In / Sign Up</button>
+  <span style="flex:1"></span>
+  <span style="cursor:pointer" onclick="document.getElementById('authBanner').style.display='none'">✕</span>
+</div>
+
+<!-- Global Toolbar -->
+<div class="global-toolbar">
+  <button class="toolbar-btn" id="btnUndo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+  <button class="toolbar-btn" id="btnRedo" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+  <button class="toolbar-btn" onclick="openModal('trashModal')" title="View deleted items">🗑️ Trash</button>
+  <button class="toolbar-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌓 Theme</button>
+  <span class="toolbar-spacer"></span>
+  <div class="sync-status local" id="syncStatus">⬤ Local</div>
+  <button class="toolbar-btn" onclick="openModal('authModal')" id="authBtn">👤 Sign In</button>
+  <button class="toolbar-btn" onclick="exportData()" title="Download backup JSON">💾 Backup</button>
+  <button class="toolbar-btn" onclick="document.getElementById('importFile').click()" title="Import backup">📂 Import</button>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-text">
+    <h1 id="appTitle" contenteditable="true" spellcheck="false" onblur="saveTitle()">Clerkship Rotation Guide</h1>
+    <p>Tap any text to edit • Drag sections to reorder • All changes sync automatically</p>
+  </div>
+</div>
+
+<!-- Search + Filter Bar -->
+<div class="search-filter-bar">
+  <div class="search-row">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search signs, symptoms, drugs, mnemonics..." oninput="handleSearch(this.value)" />
+    </div>
+    <button class="toolbar-btn" onclick="clearSearch()" id="clearSearchBtn" style="display:none">✕ Clear</button>
+  </div>
+  <div class="filter-row" id="filterRow">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-pill active" data-filter="all" onclick="setFilter('all')">📋 All</button>
+    <button class="filter-pill" data-filter="emergency" onclick="setFilter('emergency')">🚨 Emergency</button>
+    <button class="filter-pill" data-filter="mnemonic" onclick="setFilter('mnemonic')">🧠 Mnemonics</button>
+    <button class="filter-pill" data-filter="procedure" onclick="setFilter('procedure')">🩺 Procedures</button>
+    <button class="filter-pill" data-filter="lab" onclick="setFilter('lab')">🔬 Labs</button>
+    <button class="filter-pill" data-filter="normal-values" onclick="setFilter('normal-values')">📊 Normal Values</button>
+    <button class="filter-pill" data-filter="tips" onclick="setFilter('tips')">💡 Tips</button>
+    <button class="filter-pill" data-filter="pharmacology" onclick="setFilter('pharmacology')">💊 Pharmacology</button>
+  </div>
+</div>
+
+<!-- Rotation Nav -->
+<div class="rotation-nav" id="rotationNav"></div>
+
+<!-- Main Content -->
+<div class="content" id="mainContent"></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="contextMenu" style="display:none">
+  <div class="context-menu-item" onclick="ctxAction('edit')">✎ Edit</div>
+  <div class="context-menu-item" onclick="ctxAction('type')">🎨 Change Type</div>
+  <div class="context-menu-item" onclick="ctxAction('moveUp')">↑ Move Up</div>
+  <div class="context-menu-item" onclick="ctxAction('moveDown')">↓ Move Down</div>
+  <div class="context-menu-divider"></div>
+  <div class="context-menu-item danger" onclick="ctxAction('delete')">🗑 Delete</div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <h3 id="authModalTitle">🔐 Sign In to Sync</h3>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Your data will sync automatically across all your devices.</p>
+    <label>Email</label>
+    <input type="email" id="authEmail" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" id="authPassword" placeholder="Your password">
+    <div id="authError" style="color:var(--text-danger);font-size:12px;margin-top:6px;display:none;"></div>
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('authModal')">Cancel</button>
+      <button class="toolbar-btn" onclick="switchAuthMode()" id="switchAuthBtn">Sign Up instead</button>
+      <button class="toolbar-btn primary" onclick="doAuth()" id="authSubmitBtn">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3 id="modalTitle">Add Item</h3>
+    <label>Type</label>
+    <select id="modalType">
+      <option value="">Standard Bullet</option>
+      <option value="danger">🔴 Danger / Emergency</option>
+      <option value="highlight">🟡 Highlight / Warning</option>
+      <option value="info-item">🔵 Info / Pearl</option>
+      <option value="success-item">🟢 Success / Normal</option>
+      <option value="checkbox">☑ Checkbox / To-Do</option>
+    </select>
+    <label>Content <span style="color:var(--text-tertiary)">(HTML allowed for &lt;strong&gt;, &lt;em&gt;, etc.)</span></label>
+    <textarea id="modalText" rows="5" placeholder="Enter content here..."></textarea>
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('editModal')">Cancel</button>
+      <button class="toolbar-btn primary" onclick="saveModalContent()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Mnemonic Modal -->
+<div class="modal-overlay" id="mnemonicModal">
+  <div class="modal">
+    <h3>🧠 Add Mnemonic</h3>
+    <label>Title (what it helps remember)</label>
+    <input type="text" id="mnTitle" placeholder="e.g. Elevated Anion Gap Acidosis">
+    <label>Mnemonic Word</label>
+    <input type="text" id="mnWord" placeholder="e.g. MUDPILES">
+    <label>Breakdown (one per line: Letter — Meaning)</label>
+    <textarea id="mnBreakdown" rows="6" placeholder="M — Methanol&#10;U — Uremia&#10;D — DKA"></textarea>
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('mnemonicModal')">Cancel</button>
+      <button class="toolbar-btn primary" onclick="saveMnemonic()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Procedure Modal -->
+<div class="modal-overlay" id="procedureModal">
+  <div class="modal">
+    <h3>🩺 Add Procedure</h3>
+    <label>Procedure Name</label>
+    <input type="text" id="procName" placeholder="e.g. IV Line Insertion">
+    <label>Steps (one per line)</label>
+    <textarea id="procSteps" rows="7" placeholder="Step 1&#10;Step 2&#10;Step 3"></textarea>
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('procedureModal')">Cancel</button>
+      <button class="toolbar-btn primary" onclick="saveProcedure()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Table Modal -->
+<div class="modal-overlay" id="tableModal">
+  <div class="modal">
+    <h3>📊 Add Table</h3>
+    <label>Headers (comma-separated)</label>
+    <input type="text" id="tableHeaders" placeholder="Condition, Sign, Treatment">
+    <label>Rows (one row per line, values comma-separated)</label>
+    <textarea id="tableRows" rows="6" placeholder="Appendicitis, RLQ pain, Surgery&#10;Cholecystitis, Murphy's sign, Lap chole"></textarea>
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('tableModal')">Cancel</button>
+      <button class="toolbar-btn primary" onclick="saveTable()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Section Modal -->
+<div class="modal-overlay" id="addSectionModal">
+  <div class="modal">
+    <h3>➕ Add New Section</h3>
+    <label>Section Title</label>
+    <input type="text" id="newSectionTitle" placeholder="e.g. Key Medications">
+    <label>Section Icon (emoji)</label>
+    <input type="text" id="newSectionIcon" placeholder="💊" maxlength="4">
+    <label>Section Type (for filtering)</label>
+    <select id="newSectionType">
+      <option value="">General</option>
+      <option value="mnemonic">🧠 Mnemonics</option>
+      <option value="procedure">🩺 Procedures</option>
+      <option value="lab">🔬 Labs</option>
+      <option value="normal-values">📊 Normal Values</option>
+      <option value="emergency">🚨 Emergency</option>
+      <option value="tips">💡 Tips & Pearls</option>
+      <option value="pharmacology">💊 Pharmacology</option>
+    </select>
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('addSectionModal')">Cancel</button>
+      <button class="toolbar-btn primary" onclick="confirmAddSection()">Add Section</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trash Modal -->
+<div class="modal-overlay" id="trashModal">
+  <div class="modal modal-lg">
+    <h3>🗑️ Trash</h3>
+    <div id="trashContent" style="margin: 12px 0; min-height: 60px;"></div>
+    <div class="modal-btns">
+      <button class="toolbar-btn danger-btn" onclick="emptyTrash()">Empty Trash</button>
+      <button class="toolbar-btn" onclick="closeModal('trashModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Rotation Modal -->
+<div class="modal-overlay" id="addRotationModal">
+  <div class="modal">
+    <h3>➕ Add Rotation</h3>
+    <label>Full Label</label>
+    <input type="text" id="newRotLabel" placeholder="e.g. Neurology">
+    <label>Short Tag</label>
+    <input type="text" id="newRotTag" placeholder="e.g. NEURO" maxlength="6">
+    <label>Subtitle</label>
+    <input type="text" id="newRotSubtitle" placeholder="Brief description...">
+    <div class="modal-btns">
+      <button class="toolbar-btn" onclick="closeModal('addRotationModal')">Cancel</button>
+      <button class="toolbar-btn primary" onclick="confirmAddRotation()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Section Add Content Menu -->
+<div class="modal-overlay" id="addContentModal">
+  <div class="modal">
+    <h3>➕ Add to Section</h3>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">What would you like to add?</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="addContentGrid">
+      <button class="toolbar-btn" style="justify-content:center;padding:14px 10px;flex-direction:column;gap:6px;height:70px;" onclick="closeModal('addContentModal');openModal('editModal')">
+        <span style="font-size:20px">📝</span><span>Bullet Item</span>
+      </button>
+      <button class="toolbar-btn" style="justify-content:center;padding:14px 10px;flex-direction:column;gap:6px;height:70px;" onclick="closeModal('addContentModal');openModal('mnemonicModal')">
+        <span style="font-size:20px">🧠</span><span>Mnemonic</span>
+      </button>
+      <button class="toolbar-btn" style="justify-content:center;padding:14px 10px;flex-direction:column;gap:6px;height:70px;" onclick="closeModal('addContentModal');openModal('procedureModal')">
+        <span style="font-size:20px">🩺</span><span>Procedure</span>
+      </button>
+      <button class="toolbar-btn" style="justify-content:center;padding:14px 10px;flex-direction:column;gap:6px;height:70px;" onclick="closeModal('addContentModal');openModal('tableModal')">
+        <span style="font-size:20px">📊</span><span>Table</span>
+      </button>
+    </div>
+    <div class="modal-btns" style="margin-top:10px;">
+      <button class="toolbar-btn" onclick="closeModal('addContentModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DEFAULT DATA
+// ============================================================
+const defaultData = [
+  {
+    id: "im", label: "Internal Medicine", tag: "IM", subtitle: "Core of clinical reasoning — master H&P, differentials, and chronic disease management",
+    sections: [
+      { title: "Must-Know Presentations", icon: "🫀", sectionType: "emergency", items: [
+          { text: "<strong>Chest Pain DDx:</strong> ACS, PE, aortic dissection, pneumothorax, GERD, MSK — <em>rule out the killers first</em>", type: "danger" },
+          { text: "<span class='label'>STEMI</span> ST elevation ≥1mm in ≥2 contiguous leads; treat with PCI within 90 min (door-to-balloon)", type: "danger" },
+          { text: "<span class='label'>NSTEMI</span> Elevated troponin + ischemic sx without ST elevation — use TIMI/GRACE score", type: "" },
+          { text: "<span class='label'>HF</span> Framingham criteria: 2 major OR 1 major + 2 minor. NYHA class guides management", type: "" },
+          { text: "<span class='label'>CAP</span> CURB-65 score for severity: Confusion, Urea >7, RR ≥30, BP <90/60, Age ≥65", type: "" },
+          { text: "<span class='label'>DKA</span> Glucose >250, pH <7.3, bicarb <18, ketonemia — give insulin drip + IVF + KCl replacement", type: "danger" },
+          { text: "<span class='label'>HHS</span> Glucose >600, osmolality >320, minimal ketosis — more common in Type 2 DM, higher mortality", type: "danger" },
+          { text: "<span class='label'>CKD</span> GFR <60 for >3 months — adjust drug doses, monitor K/phos, watch for uremia sx", type: "" }
+      ]},
+      { title: "Key Mnemonics", icon: "🧠", sectionType: "mnemonic", mnemonics: [
+          { word: "AEIOU-TIPS", title: "Causes of Altered Mental Status", letters: [["A","lcohol/Acid-base"],["E","pilepsy/Electrolytes"],["I","nfection/Insulin"],["O","verdose/Oxygen"],["U","remia"],["T","rauma/Tumor/Toxins"],["I","nfection"],["P","sychiatric"],["S","troke/Structural"]] },
+          { word: "MUDPILES", title: "Elevated Anion Gap Acidosis", letters: [["M","ethanol"],["U","remia"],["D","KA"],["P","ropylene glycol"],["I","soniazid/Iron"],["L","actic acidosis"],["E","thylene glycol"],["S","alicylates"]] },
+          { word: "FAST HUGS", title: "ICU Daily Checklist", letters: [["F","eeding"],["A","nalgesia"],["S","edation"],["T","hromboprophylaxis"],["H","OB elevation"],["U","lcer prophylaxis"],["G","lucose control"],["S","pontaneous breathing trial"]] }
+      ]},
+      { title: "Common Procedures", icon: "🩺", sectionType: "procedure", procedures: [
+          { name: "IV Line Insertion", steps: ["Select vein (AC, forearm, hand)", "Clean with alcohol swab, allow to dry", "Apply tourniquet 5–10 cm proximal", "Insert at 15–30° bevel up", "Advance catheter once flashback seen, remove needle", "Flush with 5–10 mL NS, secure with tape"] },
+          { name: "ECG Interpretation (Systematic)", steps: ["Rate: 300/# large boxes between QRS", "Rhythm: Regular? P before every QRS?", "Axis: leads I and aVF — normal, LAD, RAD", "Intervals: PR 120–200ms, QRS <120ms, QTc <440ms (M) <460ms (F)", "Morphology: ST changes, T waves, Q waves, LVH criteria", "Interpret in clinical context always"] }
+      ]},
+      { title: "High-Yield Labs", icon: "🔬", sectionType: "lab", items: [
+          { text: "<strong>Troponin</strong> rises at 3–6h, peaks 12–24h, returns to normal in 7–10 days (I) or 14 days (T)", type: "" },
+          { text: "<strong>BNP/NT-proBNP</strong> elevated in heart failure; BNP >100 pg/mL suggests HF", type: "" },
+          { text: "<strong>D-dimer</strong> sensitive not specific for PE/DVT; use Well's score first — if low pretest, negative D-dimer rules out", type: "" },
+          { text: "<strong>CBC pearls:</strong> MCV <80 = microcytic; MCV >100 = macrocytic; reticulocyte index guides hemolysis vs marrow failure", type: "" },
+          { text: "<strong>LFTs:</strong> AST:ALT >2:1 → alcoholic hepatitis; ALT>AST → viral/NASH; ALP/GGT elevated → cholestatic", type: "" },
+          { text: "<strong>ABG normal values:</strong> pH 7.35–7.45, PaO₂ 80–100, PaCO₂ 35–45, HCO₃ 22–26", type: "" }
+      ]},
+      { title: "Ward Tips & Survival", icon: "📋", sectionType: "tips", items: [
+          { text: "<span class='pill pill-amber'>SOAPIE</span> Structure your notes: Subjective, Objective, Assessment, Plan, Implementation, Evaluation", type: "highlight" },
+          { text: "<span class='pill pill-red'>ALWAYS</span> Check renal function before NSAIDs, metformin, contrast, aminoglycosides", type: "danger" },
+          { text: "<span class='pill pill-blue'>PEARL</span> If BP doesn't respond to 2L IVF bolus, suspect distributive/cardiogenic shock — don't keep giving fluids blindly", type: "" },
+          { text: "Consult surgery for acute abdomen. If peritoneal signs present, NPO immediately", type: "" },
+          { text: "Know your ABCs and ACLS algorithms cold — V-fib gets defibrillation first, not drugs", type: "" }
+      ]}
+    ]
+  },
+  {
+    id: "surg", label: "Surgery", tag: "SURG", subtitle: "Acute abdomen, surgical emergencies, wound care, and pre/post-op management",
+    sections: [
+      { title: "Acute Abdomen — Must Know", icon: "🫁", sectionType: "emergency", items: [
+          { text: "<strong>Appendicitis:</strong> McBurney's point tenderness, Rovsing's sign, psoas sign, obturator sign. WBC elevated. CT/ultrasound confirms. Alvarado score ≥7 = surgery", type: "danger" },
+          { text: "<strong>Perforated peptic ulcer:</strong> Sudden severe epigastric pain, rigid abdomen, CXR free air under diaphragm — emergency laparotomy", type: "danger" },
+          { text: "<strong>Bowel obstruction:</strong> SBO — crampy colicky pain, distension, N/V, no flatus. AXR shows air-fluid levels, ladder pattern. Adhesions #1 cause", type: "" },
+          { text: "<strong>Cholecystitis:</strong> Murphy's sign (+), RUQ pain, fever, nausea. Ultrasound is first line. Laparoscopic cholecystectomy within 72h", type: "" },
+          { text: "<strong>Pancreatitis:</strong> Ranson's criteria on admission (>3 = severe). CT abdomen if uncertain. NPO, IVF, analgesia", type: "" },
+          { text: "<strong>Ectopic pregnancy:</strong> In women of reproductive age — always get βhCG! Shoulder tip pain = diaphragmatic irritation from hemoperitoneum", type: "danger" }
+      ]},
+      { title: "Pre-Op Assessment", icon: "📋", sectionType: "tips", items: [
+          { text: "<strong>ASA Classification:</strong> I=healthy, II=mild systemic disease, III=severe, IV=life-threatening, V=not expected to survive 24h", type: "" },
+          { text: "<span class='label'>NPO</span> Clear liquids: 2h, breast milk: 4h, solids/non-clear: 6–8h before surgery", type: "" },
+          { text: "<strong>Always check:</strong> CBC, electrolytes, creatinine, coags (PT/PTT/INR), type & screen, ECG if >40 or cardiac hx", type: "" },
+          { text: "<strong>Hold:</strong> warfarin 5 days pre-op, metformin day of surgery (lactic acidosis risk), aspirin 7–10 days (elective)", type: "" },
+          { text: "<strong>Consent:</strong> Procedure, risks, benefits, alternatives, and patient must have capacity — ALWAYS document", type: "" }
+      ]},
+      { title: "Post-Op Complications — Timing Key", icon: "⏱", sectionType: "tips", table: {
+          headers: ["Time", "Complication", "Key Sign/Action"],
+          rows: [
+            ["Immediate (0–24h)", "Hemorrhage, anesthesia complications", "Tachycardia, ↓BP → check wound, CBC"],
+            ["24–72h", "Atelectasis, fever", "Encourage deep breathing, IS, ambulate"],
+            ["72h–5 days", "UTI, pneumonia", "UA, CXR, appropriate antibiotics"],
+            ["5–10 days", "Surgical site infection", "Wound erythema/pus → culture, open wound if needed"],
+            ["5–14 days", "DVT/PE", "Calf pain, dyspnea → Doppler, CTA-PE"],
+            [">10 days", "Anastomotic leak", "Fever, abdominal pain → CT abdomen"]
+          ]
+      }},
+      { title: "Wound Care Basics", icon: "🩹", sectionType: "tips", items: [
+          { text: "<strong>Primary closure:</strong> Clean wound, closed immediately. Sutures by location: face 3–5 days, scalp 7–10, trunk/extremity 10–14, joints 14 days", type: "" },
+          { text: "<strong>Secondary intention:</strong> Infected/contaminated wounds — pack and allow granulation", type: "" },
+          { text: "<strong>Tertiary (delayed primary):</strong> Closed 3–5 days after initial debridement — traumatic/contaminated", type: "" },
+          { text: "<span class='pill pill-red'>DANGER</span> Necrotizing fasciitis: rapidly spreading, disproportionate pain, 'dishwater' discharge, crepitus → immediate surgical debridement", type: "danger" },
+          { text: "<strong>Tetanus prophylaxis:</strong> Clean/minor wound: TT if >10y since booster. All other wounds: TT if >5y", type: "" }
+      ]},
+      { title: "Key Surgical Procedures", icon: "✂️", sectionType: "procedure", procedures: [
+          { name: "Suturing Technique (Simple Interrupted)", steps: ["Clean and anesthetize wound (1% lidocaine with epi for non-extremity)", "Approximate wound edges with tissue forceps", "Insert needle perpendicular, 3–5mm from edge, evert edges slightly", "Pass needle under dermis, exit symmetrically on other side", "Tie square knot: 3 throws, cut tails to 3–4mm", "Space sutures ~5mm apart, remove per location timeline"] },
+          { name: "Nasogastric Tube Insertion", steps: ["Measure: nares to earlobe to xiphoid + 15cm", "Lubricate tip, flex neck forward", "Insert through nostril, advance while patient swallows sips of water", "Confirm placement: aspiration of gastric contents (pH <4), CXR (gold standard)", "Secure to nose with tape, document external length"] }
+      ]}
+    ]
+  },
+  {
+    id: "peds", label: "Pediatrics", tag: "PEDS", subtitle: "Age-specific normal values, developmental milestones, and pediatric emergencies",
+    sections: [
+      { title: "Normal Vital Signs by Age", icon: "📊", sectionType: "normal-values", table: {
+          headers: ["Age", "HR (bpm)", "RR (breaths/min)", "SBP (mmHg)"],
+          rows: [
+            ["Newborn", "100–160", "40–60", "60–90"],
+            ["1–12 months", "100–160", "30–60", "70–100"],
+            ["1–3 years", "90–150", "24–40", "80–110"],
+            ["4–5 years", "80–140", "22–34", "80–110"],
+            ["6–12 years", "70–120", "18–30", "90–120"],
+            [">12 years", "60–100", "12–20", "100–130"]
+          ]
+      }},
+      { title: "Developmental Milestones", icon: "👶", sectionType: "normal-values", items: [
+          { text: "<span class='label'>2 mo</span> Social smile, tracks past midline, coos, lifts head prone", type: "" },
+          { text: "<span class='label'>4 mo</span> Laughs, rolls front→back, reaches for objects, head steady", type: "" },
+          { text: "<span class='label'>6 mo</span> Sits with support, transfers objects, babbles, recognizes strangers", type: "" },
+          { text: "<span class='label'>9 mo</span> Sits alone, crawls, pincer grasp starts, mama/dada nonspecific", type: "" },
+          { text: "<span class='label'>12 mo</span> Walks with support, 2–3 words specific, points, waves bye-bye", type: "" },
+          { text: "<span class='label'>18 mo</span> Walks alone, 10–20 words, uses spoon, imitates, parallel play", type: "" },
+          { text: "<span class='label'>2 yrs</span> 2-word phrases, 50% understood by strangers, kicks ball, 50-word vocab", type: "" },
+          { text: "<span class='label'>3 yrs</span> 3-word sentences, 75% intelligible, rides tricycle, knows name/age", type: "" },
+          { text: "<span class='label'>4 yrs</span> Fully intelligible, counts 4 objects, hops, draws person with 3 parts", type: "" },
+          { text: "<strong>Red flags:</strong> No social smile by 3mo, no words by 18mo, no 2-word phrases by 2yo, any regression = refer", type: "danger" }
+      ]},
+      { title: "APGAR Score", icon: "🏥", sectionType: "normal-values", table: {
+          headers: ["Sign", "0", "1", "2"],
+          rows: [
+            ["Appearance (color)", "Blue/Pale all over", "Blue extremities, pink body", "Pink all over"],
+            ["Pulse", "Absent", "<100 bpm", "≥100 bpm"],
+            ["Grimace (reflex)", "No response", "Grimace only", "Cry/cough/sneeze"],
+            ["Activity (tone)", "Limp", "Some flexion", "Active motion"],
+            ["Respiration", "Absent", "Weak/irregular", "Strong cry"]
+          ]
+      }},
+      { title: "Pediatric Emergencies", icon: "🚨", sectionType: "emergency", items: [
+          { text: "<strong>Febrile seizure:</strong> 6mo–5yr, <15min, generalized, resolves spontaneously. Simple vs complex (focal/>15min/>1/24h). LP if <12mo and no source", type: "highlight" },
+          { text: "<strong>Croup:</strong> Barking cough, stridor, worse at night. Steeple sign on AP neck. Treat: racemic epi neb, dexamethasone (0.6 mg/kg)", type: "" },
+          { text: "<strong>Epiglottitis:</strong> Tripod position, drooling, high fever, muffled voice, 'thumb sign' on lateral neck XR — DON'T examine throat; secure airway", type: "danger" },
+          { text: "<strong>Bronchiolitis:</strong> RSV most common, <2yo, wheezing/crackles. Supportive only — suction, O₂; no routine albuterol", type: "" }
+      ]}
+    ]
+  },
+  {
+    id: "obgyn", label: "OB-GYN", tag: "OBGYN", subtitle: "Pregnancy milestones, labor management, and common gynecologic complaints",
+    sections: [
+      { title: "Obstetrics Basics", icon: "🤰", sectionType: "tips", items: [
+          { text: "<strong>Naegele's Rule:</strong> LMP + 9 months + 7 days = EDD. Adjust if cycle ≠ 28 days", type: "" },
+          { text: "<strong>Gestational age:</strong> Weeks from LMP. Viability = 22–24 weeks. Term = 37–41 weeks", type: "" },
+          { text: "<strong>Leopold's maneuvers:</strong> 1st – fundal presentation, 2nd – fetal back, 3rd – presenting part, 4th – engagement into pelvis", type: "" }
+      ]},
+      { title: "Labor & Delivery", icon: "👶", sectionType: "tips", items: [
+          { text: "<span class='label'>Stage 1</span> Latent: 0–6cm. Active: 6–10cm (cervical change ≥1cm/hr). 'Active management' starts at 6cm", type: "" },
+          { text: "<span class='label'>Stage 2</span> Full dilation to delivery. Max 3h with epidural, 2h without primips; 2h/1h for multips", type: "" },
+          { text: "<span class='label'>Stage 3</span> Delivery of placenta — up to 30 minutes. Signs of separation: Calkin's sign, gush of blood, cord lengthening", type: "" },
+          { text: "<span class='label'>Stage 4</span> First 2 hours postpartum — monitor for hemorrhage (most common complication)", type: "" },
+          { text: "<strong>Fetal heart rate patterns:</strong> Early decelerations (normal, head compression), late decelerations (uteroplacental insufficiency — concerning), variable decelerations (cord compression)", type: "" },
+          { text: "<span class='pill pill-red'>EMERGENCY</span> Ectopic pregnancy: βhCG + no intrauterine sac on US. Discriminatory zone: if βhCG >1500–2000 mIU/mL, should see IUP on transvaginal US", type: "danger" }
+      ]},
+      { title: "Gynecology Essentials", icon: "🌸", sectionType: "tips", items: [
+          { text: "<strong>PID:</strong> CDC criteria — cervical motion tenderness + uterine/adnexal tenderness. Treat empirically with ceftriaxone + doxycycline ± metronidazole", type: "" },
+          { text: "<strong>PCOS:</strong> Rotterdam criteria — 2 of 3: oligo-anovulation, hyperandrogenism, polycystic ovaries on US", type: "" },
+          { text: "<strong>Endometriosis:</strong> Dysmenorrhea + dyspareunia + infertility. Chocolate cysts. Definitive diagnosis: laparoscopy", type: "" },
+          { text: "<strong>Ovarian torsion:</strong> Sudden severe unilateral pain, N/V, adnexal mass. US shows absent Doppler flow. Surgical emergency within 6h", type: "danger" }
+      ]},
+      { title: "Procedures in OB-GYN", icon: "🩺", sectionType: "procedure", procedures: [
+          { name: "Pelvic Examination", steps: ["Explain procedure and obtain consent", "Lithotomy position, drape appropriately", "External genitalia inspection first", "Insert speculum (warmed), open blades, visualize cervix", "Pap smear: Cervex-brush rotation ×5, transfer to liquid prep vial", "Bimanual exam: 2 fingers in vagina + abdominal hand — size, shape, tenderness of uterus/adnexa"] }
+      ]}
+    ]
+  },
+  {
+    id: "chfm", label: "Community Health", tag: "CHFM", subtitle: "Preventive care, health promotion, epidemiology, and family medicine",
+    sections: [
+      { title: "Epidemiology Basics", icon: "📊", sectionType: "tips", items: [
+          { text: "<strong>Sensitivity:</strong> TP / (TP+FN) — How well test detects disease; high = good screening test", type: "" },
+          { text: "<strong>Specificity:</strong> TN / (TN+FP) — How well test excludes disease; high = good confirmatory test", type: "" },
+          { text: "<span class='pill pill-amber'>MNEMONIC</span> SnNOut: Sensitive test, Negative = rule Out | SpPIn: Specific test, Positive = rule In", type: "highlight" },
+          { text: "<strong>NNT:</strong> 1 / ARR (Absolute Risk Reduction) — lower NNT = more effective intervention", type: "" }
+      ]},
+      { title: "Philippine Health System", icon: "🇵🇭", sectionType: "tips", items: [
+          { text: "<strong>PhilHealth:</strong> National health insurance program; Z-benefits for catastrophic conditions, outpatient benefit package", type: "" },
+          { text: "<strong>RA 11223 (UHC Act 2019):</strong> Universal health coverage for all Filipinos; automatic enrollment in PhilHealth", type: "" },
+          { text: "<strong>DOH programs:</strong> EPI (Expanded Program on Immunization), DOTS for TB, Garantisadong Pambata, MNCHN strategy", type: "" },
+          { text: "<strong>Barangay Health Center:</strong> First point of contact. RHU → District Hospital → Provincial Hospital → Regional/Tertiary", type: "" },
+          { text: "<strong>FHSIS:</strong> Field Health Service Information System — key tool for community health data reporting", type: "" },
+          { text: "<strong>IMCI:</strong> Integrated Management of Childhood Illness — classify sick child <5yo into danger signs then treat", type: "highlight" }
+      ]},
+      { title: "Immunization Schedule (PH-EPI)", icon: "💉", sectionType: "tips", items: [
+          { text: "<span class='label'>Birth</span> BCG, Hepatitis B (1st dose within 24h)", type: "" }
+      ]},
+      { title: "Family Medicine Assessment", icon: "👨‍👩‍👧‍👦", sectionType: "tips", items: [
+          { text: "<strong>Genogram:</strong> Maps family structure, medical history, mental health, substance use in family", type: "" },
+          { text: "<strong>APGAR (Family):</strong> Adaptation, Partnership, Growth, Affection, Resolve — score 0–10; <3 = severe dysfunction", type: "highlight" },
+          { text: "<strong>SCREEM:</strong> Social, Cultural, Religious, Economic, Educational, Medical — family resources assessment", type: "" }
+      ]}
+    ]
+  },
+  {
+    id: "psych", label: "Psychiatry", tag: "PSYCH", subtitle: "Mental status exam, DSM-5 basics, psychiatric emergencies, and pharmacology",
+    sections: [
+      { title: "Mental Status Examination (MSE)", icon: "🧠", sectionType: "tips", items: [
+          { text: "<span class='label'>A</span> <strong>Appearance:</strong> Grooming, hygiene, dress, psychomotor activity (agitation/retardation)", type: "" },
+          { text: "<span class='label'>B</span> <strong>Behavior:</strong> Eye contact, cooperation, posture, abnormal movements (EPS, tardive dyskinesia)", type: "" },
+          { text: "<span class='label'>S</span> <strong>Speech:</strong> Rate, rhythm, volume, prosody, latency of response, poverty of speech", type: "" },
+          { text: "<span class='label'>M</span> <strong>Mood:</strong> Patient's own words — 'How are you feeling?' subjective", type: "" },
+          { text: "<span class='label'>A</span> <strong>Affect:</strong> Your observation — range (full/restricted/flat), lability, congruence with mood", type: "" },
+          { text: "<span class='label'>T</span> <strong>Thought Process:</strong> Logical, goal-directed vs flight of ideas, loosening of associations, tangential, circumstantial", type: "" },
+          { text: "<span class='label'>T</span> <strong>Thought Content:</strong> Delusions (type), obsessions, phobias, SI/HI (passive/active, with or without plan/intent/means)", type: "" }
+      ]},
+      { title: "Psychiatric Emergencies", icon: "🚨", sectionType: "emergency", items: [
+          { text: "<strong>Suicide risk assessment:</strong> IS PATH WARM — Ideation, Substance use, Purposelessness, Anxiety, Trapped, Hopelessness, Withdrawal, Anger, Recklessness, Mood changes", type: "danger" },
+          { text: "<strong>Neuroleptic Malignant Syndrome (NMS):</strong> FEVER mnemonic — Fever, Encephalopathy, Vitals unstable, Elevated CPK, Rigidity. Stop antipsychotic immediately, bromocriptine/dantrolene", type: "danger" },
+          { text: "<strong>Serotonin Syndrome:</strong> Hunter criteria — tremor + clonus + hyperreflexia + agitation + diaphoresis. Vs NMS: onset faster, rigidity less severe, clonus present", type: "danger" },
+          { text: "<strong>EPS management:</strong> Acute dystonia → benztropine 1–2 mg IM/IV. Akathisia → propranolol or benzodiazepine. Tardive dyskinesia → reduce/stop offending agent", type: "" },
+          { text: "<strong>Acute agitation:</strong> De-escalation first → oral medication (olanzapine, lorazepam) → IM if refuses (haloperidol + lorazepam + diphenhydramine = 'B52 cocktail')", type: "" }
+      ]},
+      { title: "Psychopharmacology", icon: "💊", sectionType: "pharmacology", table: {
+          headers: ["Drug Class", "Examples", "Key Side Effects"],
+          rows: [
+            ["SSRIs (first-line)", "Fluoxetine, Sertraline, Escitalopram", "Sexual dysfunction, GI upset, serotonin syndrome; suicidality in <24yo"],
+            ["SNRIs", "Venlafaxine, Duloxetine", "HTN, serotonin syndrome, discontinuation syndrome"],
+            ["TCAs", "Amitriptyline, Nortriptyline", "Anticholinergic effects, cardiotoxic in overdose (wide QRS)"],
+            ["MAOIs", "Phenelzine, Tranylcypromine", "Tyramine reaction (hypertensive crisis), serotonin syndrome"],
+            ["Typical antipsychotics", "Haloperidol, Chlorpromazine", "EPS, tardive dyskinesia, NMS"],
+            ["Atypical antipsychotics", "Olanzapine, Quetiapine, Risperidone", "Metabolic syndrome, weight gain, QTc prolongation"],
+            ["Mood stabilizers", "Lithium, Valproate, Carbamazepine", "Lithium: tremor, nephrogenic DI, thyroid; narrow TI"],
+            ["Benzodiazepines", "Diazepam, Lorazepam, Clonazepam", "Dependence, respiratory depression, anterograde amnesia"]
+          ]
+      }}
+    ]
+  },
+  {
+    id: "ent", label: "ENT", tag: "ENT", subtitle: "Otolaryngology basics",
+    sections: [
+      { title: "ENT Emergencies & Must-Knows", icon: "👂", sectionType: "emergency", items: [
+          { text: "<strong>Peritonsillar abscess:</strong> Uvular deviation, 'hot potato voice', trismus, drooling. Needle aspiration or I&D + penicillin + steroids", type: "danger" },
+          { text: "<strong>Pharyngitis:</strong> Centor criteria: fever, tonsillar exudate, tender anterior cervical LAD, no cough. Score 3–4 → test or treat for strep (penicillin)", type: "" },
+          { text: "<strong>Sudden SNHL:</strong> >30dB loss in 3 contiguous frequencies within 72h — oral steroids within 2 weeks, ENT urgently", type: "danger" }
+      ]},
+      { title: "Audiologic Tests", icon: "🔊", sectionType: "normal-values", table: {
+          headers: ["Test", "Conductive HL", "Sensorineural HL"],
+          rows: [
+            ["Weber (tuning fork, vertex)", "Lateralizes to affected ear", "Lateralizes to better ear"],
+            ["Rinne (tuning fork, mastoid)", "BC > AC (abnormal)", "AC > BC (normal ratio, but both reduced)"],
+            ["Clinical implication", "Otosclerosis, cerumen, AOM, perforation", "Noise, presbycusis, Ménière's, ototoxicity"]
+          ]
+      }},
+      { title: "Otoscopy & Procedures", icon: "🩺", sectionType: "procedure", procedures: [
+          { name: "Otoscopy Technique", steps: ["Pull pinna: adults → posterior and superior; children → posterior and inferior", "Insert speculum gently into outer 1/3 of canal", "Visualize: canal, landmarks (light reflex at 5 o'clock right, 7 o'clock left), TM color and integrity", "Normal TM: pearly gray, translucent, cone of light"] }
+      ]}
+    ]
+  },
+  {
+    id: "radio", label: "Radiology", tag: "RAD", subtitle: "Systematic image reading, modality selection, and radiation safety",
+    sections: [
+      { title: "Chest X-Ray — Systematic Reading", icon: "🫁", sectionType: "tips", items: [
+          { text: "<span class='label'>ABCDE</span> Airway (trachea midline), Bones (fractures/lytic), Cardiac (CTR <50%, borders), Diaphragm (free air? flattening?), Everything else (soft tissue, tubes, lines)", type: "highlight" },
+          { text: "<strong>Normal CTR:</strong> Cardiothoracic ratio <0.5 on PA. Cardiomegaly if >0.5", type: "" },
+          { text: "<strong>Consolidation:</strong> Air-space opacity with air bronchograms (pneumonia, alveolar edema)", type: "" },
+          { text: "<strong>Pleural effusion:</strong> Blunting of costophrenic angle (>200 mL). Meniscus sign. Trace on decubitus", type: "" },
+          { text: "<strong>Pneumothorax:</strong> Hyperlucency + absent lung markings. Tension: tracheal deviation away from affected side — immediate needle decompression", type: "danger" },
+          { text: "<strong>Interstitial pattern:</strong> Kerley B lines, peribronchial cuffing → cardiogenic pulmonary edema", type: "" },
+          { text: "<strong>Free air under diaphragm:</strong> Perforated viscus → erect CXR or left lateral decubitus", type: "danger" }
+      ]},
+      { title: "Modality Selection", icon: "📡", sectionType: "tips", table: {
+          headers: ["Clinical Scenario", "Best Modality", "Why"],
+          rows: [
+            ["Acute head trauma/stroke", "CT (non-contrast)", "Fast, detects hemorrhage"],
+            ["Ischemic stroke (acute)", "MRI Brain", "Detects infarct earlier than CT"],
+            ["Pulmonary embolism", "CTA-PA", "Gold standard for PE diagnosis"],
+            ["Appendicitis (adult)", "CT abdomen/pelvis with contrast", "High sensitivity/specificity"],
+            ["Appendicitis (child/pregnant)", "Ultrasound first, MRI if inconclusive", "No radiation"],
+            ["Renal colic", "CT KUB (non-contrast)", "Detects urolithiasis"],
+            ["Bowel obstruction", "AXR then CT", "AXR: air-fluid levels; CT: level + cause"]
+          ]
+      }},
+      { title: "Radiation Safety", icon: "☢", sectionType: "tips", items: [
+          { text: "<strong>Radiation dose comparison:</strong> CXR 0.02 mSv → CT chest 7 mSv → CT abdomen/pelvis 10–20 mSv", type: "" },
+          { text: "<strong>Contrast contraindications:</strong> CKD (eGFR <30 for iodinated), previous contrast reaction, metformin (hold 48h post-IV contrast)", type: "" },
+          { text: "<strong>Pre-contrast hydration:</strong> N-acetylcysteine + IV saline for CIN prophylaxis if eGFR 30–60", type: "" },
+          { text: "<span class='pill pill-red'>ALARA</span> As Low As Reasonably Achievable — always justify imaging, especially in children and pregnant women", type: "" },
+          { text: "<strong>MRI contraindications:</strong> Pacemakers (most; MRI-conditional exist), cochlear implants, metallic foreign bodies in eye, aneurysm clips (check compatibility)", type: "" }
+      ]}
+    ]
+  },
+  {
+    id: "ortho", label: "Orthopedics", tag: "ORTHO", subtitle: "Fractures, joint injuries, compartment syndrome, and musculoskeletal emergencies",
+    sections: [
+      { title: "Fracture Description — ALWAYS Systematic", icon: "🦴", sectionType: "tips", items: [
+          { text: "<span class='label'>Bone</span> Which bone, which part (proximal, middle, distal third)", type: "" },
+          { text: "<span class='label'>Type</span> Transverse, oblique, spiral (rotational force), comminuted (≥3 fragments), segmental, impacted", type: "" },
+          { text: "<span class='label'>Open/Closed</span> Open (compound) = bone through skin — high infection risk → antibiotics + tetanus + early surgical debridement", type: "danger" },
+          { text: "<span class='label'>Displacement</span> Non-displaced vs displaced (translation, angulation, shortening/distraction, rotation)", type: "" }
+      ]},
+      { title: "Compartment Syndrome", icon: "🚨", sectionType: "emergency", items: [
+          { text: "<strong>6 P's:</strong> Pain (disproportionate, on passive stretch), Pressure (tense compartment), Paresthesia, Paralysis, Pallor, Pulselessness (late finding)", type: "danger" },
+          { text: "<strong>Most common sites:</strong> Anterior leg compartment, forearm volar compartment", type: "" },
+          { text: "<strong>Diagnosis:</strong> Compartment pressure >30 mmHg OR within 30 mmHg of diastolic pressure → fasciotomy", type: "danger" },
+          { text: "<strong>Causes:</strong> Fracture, crush injury, prolonged limb compression, burns, constrictive casts — cut/bivalve cast immediately", type: "danger" },
+          { text: "<span class='pill pill-red'>EMERGENCY</span> Irreversible muscle necrosis within 6 hours — fasciotomy cannot be delayed", type: "danger" }
+      ]},
+      { title: "Special Tests & Clinical Pearls", icon: "🩺", sectionType: "tips", table: {
+          headers: ["Test", "Joint", "Tests For", "Positive If"],
+          rows: [
+            ["Lachman", "Knee", "ACL", "Anterior tibial translation >5mm"],
+            ["McMurray", "Knee", "Meniscus", "Click + pain on rotation"],
+            ["Valgus stress", "Knee", "MCL", "Pain/laxity at medial joint line"],
+            ["Varus stress", "Knee", "LCL", "Pain/laxity at lateral joint line"],
+            ["Anterior drawer", "Ankle", "ATFL", "Anterior talus translation"],
+            ["Neer's sign", "Shoulder", "Impingement", "Pain on forced flexion"]
+          ]
+      }}
+    ]
+  },
+  {
+    id: "ophtho", label: "Ophthalmology", tag: "OPH", subtitle: "Eye exams and critical ocular presentations",
+    sections: [
+      { title: "The Red Eye DDx", icon: "👁️", sectionType: "emergency", table: {
+          headers: ["Condition", "Pain", "Vision", "Discharge", "Pupil", "Other Signs"],
+          rows: [
+            ["Bacterial Conjunctivitis", "Mild", "Normal", "Purulent", "Normal", "Matted lashes in AM"],
+            ["Corneal Abrasion", "Severe", "Normal/decrease", "Tearing", "Normal", "Fluorescein staining"],
+            ["Anterior Uveitis", "Moderate", "Decreased", "None", "Small, irregular", "Ciliary flush, keratic precipitates, photophobia"],
+            ["Acute Angle Closure Glaucoma", "Severe", "Decreased", "None", "Mid-dilated, fixed", "Rock-hard globe, halos, N/V — EMERGENCY"],
+            ["Subconjunctival Hemorrhage", "None", "Normal", "None", "Normal", "Bright red, flat, self-limiting"]
+          ]
+      }},
+      { title: "Ocular Emergencies", icon: "🚨", sectionType: "emergency", items: [
+          { text: "<strong>Central Retinal Artery Occlusion (CRAO):</strong> Sudden painless vision loss. Pale retina + 'cherry red spot' at macula. Immediate: ocular massage, IOP reduction, CO₂ inhalation. Window: 90–120 min", type: "danger" },
+          { text: "<strong>Acute angle-closure glaucoma:</strong> Fixed mid-dilated pupil, IOP >21 (often >40). Immediate pilocarpine 2% + IV acetazolamide + mannitol + ophtho consult", type: "danger" },
+          { text: "<strong>Chemical burn:</strong> IMMEDIATE copious irrigation (Morgan lens), 1–2L NS. Check pH (neutral 7.4 goal). Alkali burns > acid burns (deeper penetration)", type: "danger" },
+          { text: "<strong>Retinal detachment:</strong> Painless, 'curtain across vision', floaters/flashes. Macula-on = urgent (hours); macula-off = urgent but not minutes. US if media opaque", type: "" },
+          { text: "<strong>Open globe injury:</strong> DO NOT apply pressure; shield (not patch) the eye; NPO, antibiotics, anti-emetic (straining ↑IOP), urgent surgical repair", type: "danger" }
+      ]},
+      { title: "Chronic Eye Conditions", icon: "👓", sectionType: "tips", items: [
+          { text: "<strong>Diabetic retinopathy:</strong> NPDR (microaneurysms, dot/blot hemorrhages, hard exudates) → PDR (neovascularization, preretinal/vitreous hemorrhage). Annual dilated fundus exam for all DM", type: "" },
+          { text: "<strong>Hypertensive retinopathy (Scheie classification):</strong> Grade I-IV: I=AV nicking, II=copper wiring, III=flame hemorrhages/cotton wool spots, IV=papilledema", type: "" },
+          { text: "<strong>Glaucoma vs papilledema:</strong> Glaucoma: optic atrophy + increased C:D (>0.6 suspicious); Papilledema: disc edema bilaterally, blurred margins — raised ICP until proven otherwise", type: "" },
+          { text: "<strong>Cataracts:</strong> Nuclear (brunescent), cortical, posterior subcapsular (steroids/DM). Surgical when vision affects daily life", type: "" }
+      ]}
+    ]
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let rotations = JSON.parse(localStorage.getItem('clerkshipDataV3')) || JSON.parse(JSON.stringify(defaultData));
+let trash = JSON.parse(localStorage.getItem('clerkshipTrashV3')) || [];
+let history = [JSON.stringify(rotations)];
+let historyIndex = 0;
+let currentRotation = rotations[0].id;
+let searchQuery = "";
+let activeFilter = "all";
+let draggedSectionIndex = null;
+let currentEditTarget = null;
+let currentAddTarget = null;
+let ctxTarget = null;
+let deferredPrompt = null;
+let currentUser = null;
+let firestoreUnsub = null;
+let isSyncing = false;
+let appTitle = localStorage.getItem('clerkshipTitle') || 'Clerkship Rotation Guide';
+
+// ============================================================
+// PWA / INSTALL
+// ============================================================
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('installBanner').classList.remove('show');
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  showToast('✅ App installed successfully!', 'success');
+});
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW registration failed:', err));
+}
+
+// ============================================================
+// FIREBASE AUTH & SYNC
+// ============================================================
+document.addEventListener('firebaseReady', () => {
+  const { auth, onAuthStateChanged } = window._firebase;
+
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+    if (user) {
+      document.getElementById('authBtn').textContent = '👤 ' + (user.email.split('@')[0]);
+      document.getElementById('authBanner').style.display = 'none';
+      setSyncStatus('syncing');
+      startFirestoreSync(user.uid);
+    } else {
+      document.getElementById('authBtn').textContent = '👤 Sign In';
+      document.getElementById('authBanner').style.display = 'flex';
+      setSyncStatus('local');
+      if (firestoreUnsub) { firestoreUnsub(); firestoreUnsub = null; }
+    }
+  });
+});
+
+function setSyncStatus(state) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + state;
+  if (state === 'synced') el.innerHTML = '⬤ Synced';
+  else if (state === 'syncing') el.innerHTML = '<span class="sync-spin">↻</span> Syncing…';
+  else if (state === 'offline') el.innerHTML = '⬤ Offline';
+  else el.innerHTML = '⬤ Local';
+}
+
+function startFirestoreSync(uid) {
+  if (!window._firebaseReady) return;
+  const { db, doc, onSnapshot } = window._firebase;
+
+  // Check if this is placeholder config
+  if (doc.toString().includes('YOUR_API_KEY') || !uid) return;
+
+  try {
+    const ref = doc(db, 'users', uid, 'data', 'rotations');
+    firestoreUnsub = onSnapshot(ref, snap => {
+      if (snap.exists()) {
+        const remote = snap.data();
+        if (remote.rotations && remote.updatedAt > (localStorage.getItem('clerkshipLocalTime') || 0)) {
+          rotations = remote.rotations;
+          localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
+          history = [JSON.stringify(rotations)];
+          historyIndex = 0;
+          renderNav();
+          renderContent();
+          setSyncStatus('synced');
+        } else {
+          pushToFirestore();
+        }
+      } else {
+        pushToFirestore();
+      }
+    }, err => {
+      console.warn('Firestore sync error:', err);
+      setSyncStatus('offline');
+    });
+  } catch(e) {
+    console.warn('Firestore not configured:', e);
+    setSyncStatus('local');
+  }
+}
+
+function pushToFirestore() {
+  if (!currentUser || !window._firebaseReady) return;
+  const { db, doc, setDoc } = window._firebase;
+  
+  // Check placeholder
+  if (!currentUser.uid) return;
+
+  isSyncing = true;
+  setSyncStatus('syncing');
+  const now = Date.now();
+  localStorage.setItem('clerkshipLocalTime', now);
+  
+  try {
+    const ref = doc(db, 'users', currentUser.uid, 'data', 'rotations');
+    setDoc(ref, { rotations, updatedAt: now }).then(() => {
+      setSyncStatus('synced');
+      isSyncing = false;
+    }).catch(err => {
+      console.warn('Push failed:', err);
+      setSyncStatus('offline');
+      isSyncing = false;
+    });
+  } catch(e) {
+    setSyncStatus('local');
+    isSyncing = false;
+  }
+}
+
+// ============================================================
+// AUTH MODAL LOGIC
+// ============================================================
+let authMode = 'signin';
+
+function switchAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('authModalTitle').textContent = authMode === 'signin' ? '🔐 Sign In to Sync' : '🔐 Create Account';
+  document.getElementById('authSubmitBtn').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('switchAuthBtn').textContent = authMode === 'signin' ? 'Sign Up instead' : 'Sign In instead';
+  document.getElementById('authError').style.display = 'none';
+}
+
+async function doAuth() {
+  if (!window._firebaseReady) {
+    showToast('⚠️ Firebase not configured yet. See setup guide.', 'error');
+    return;
+  }
+  const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = window._firebase;
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.style.display = 'none';
+
+  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
+
+  try {
+    if (authMode === 'signin') {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } else {
+      await createUserWithEmailAndPassword(auth, email, pass);
+    }
+    closeModal('authModal');
+    showToast('✅ Signed in! Syncing your data…', 'success');
+  } catch (err) {
+    errEl.textContent = err.message.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '');
+    errEl.style.display = 'block';
+  }
+}
+
+async function signOutUser() {
+  if (!window._firebaseReady) return;
+  const { auth, signOut } = window._firebase;
+  await signOut(auth);
+  showToast('Signed out. Data saved locally.', '');
+}
+
+// ============================================================
+// TITLE EDITING
+// ============================================================
+document.getElementById('appTitle').textContent = appTitle;
+function saveTitle() {
+  appTitle = document.getElementById('appTitle').textContent;
+  localStorage.setItem('clerkshipTitle', appTitle);
+}
+
+// ============================================================
+// STATE MANAGEMENT
+// ============================================================
+function saveState() {
+  history = history.slice(0, historyIndex + 1);
+  history.push(JSON.stringify(rotations));
+  historyIndex++;
+  if (history.length > 50) { history.shift(); historyIndex--; }
+  localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
+  updateToolbar();
+  renderNav();
+  renderContent();
+  pushToFirestore();
+}
+
+function undo() {
+  if (historyIndex > 0) {
+    historyIndex--;
+    rotations = JSON.parse(history[historyIndex]);
+    localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
+    updateToolbar();
+    renderNav();
+    renderContent();
+    pushToFirestore();
+  }
+}
+
+function redo() {
+  if (historyIndex < history.length - 1) {
+    historyIndex++;
+    rotations = JSON.parse(history[historyIndex]);
+    localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
+    updateToolbar();
+    renderNav();
+    renderContent();
+    pushToFirestore();
+  }
+}
+
+function updateToolbar() {
+  document.getElementById('btnUndo').disabled = historyIndex === 0;
+  document.getElementById('btnRedo').disabled = historyIndex === history.length - 1;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+  if (e.key === 'Escape') { closeAllModals(); hideContextMenu(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); document.getElementById('searchInput').focus(); }
+});
+
+// ============================================================
+// THEME
+// ============================================================
+function toggleTheme() {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('clerkshipTheme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+}
+if (localStorage.getItem('clerkshipTheme') === 'dark') document.body.classList.add('dark-mode');
+
+// ============================================================
+// FILTER SYSTEM
+// ============================================================
+function setFilter(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.filter === filter));
+  if (searchQuery) {
+    filterContent(searchQuery);
+  } else {
+    renderContent();
+  }
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+function handleSearch(val) {
+  searchQuery = val.toLowerCase().trim();
+  document.getElementById('clearSearchBtn').style.display = searchQuery ? 'flex' : 'none';
+  if (searchQuery) filterContent(searchQuery);
+  else { renderNav(); renderContent(); }
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  handleSearch('');
+}
+
+function getTextFromItem(item) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = item.text || '';
+  return tmp.textContent.toLowerCase();
+}
+
+function sectionMatchesFilter(sec) {
+  if (activeFilter === 'all') return true;
+  if (sec.sectionType === activeFilter) return true;
+  if (activeFilter === 'mnemonic' && sec.mnemonics) return true;
+  if (activeFilter === 'procedure' && sec.procedures) return true;
+  if (activeFilter === 'normal-values' && sec.table) return true;
+  if (activeFilter === 'emergency' && sec.items && sec.items.some(i => i.type === 'danger')) return true;
+  return false;
+}
+
+function filterContent(query) {
+  const content = document.getElementById("mainContent");
+  let html = `<div class="rotation-title">🔍 Results for "<em>${query}</em>"</div>
+    <div class="rotation-subtitle" style="margin-bottom:1rem;">Searching across all rotations${activeFilter !== 'all' ? ` · Filter: ${activeFilter}` : ''}</div>
+    <div class="sections-grid">`;
+
+  let found = false;
+
+  rotations.forEach((rot, rotIdx) => {
+    rot.sections.forEach((sec, secIdx) => {
+      if (!sectionMatchesFilter(sec)) return;
+      
+      const titleMatch = sec.title.toLowerCase().includes(query);
+      const matchedItems = (sec.items || []).filter(i => getTextFromItem(i).includes(query));
+      const mnemonicMatch = (sec.mnemonics || []).some(m =>
+        m.word.toLowerCase().includes(query) || m.title.toLowerCase().includes(query) ||
+        m.letters.some(l => l[1].toLowerCase().includes(query))
+      );
+      const procMatch = (sec.procedures || []).some(p =>
+        p.name.toLowerCase().includes(query) || p.steps.some(s => s.toLowerCase().includes(query))
+      );
+      const tableMatch = sec.table && (
+        sec.table.headers.some(h => h.toLowerCase().includes(query)) ||
+        sec.table.rows.some(r => r.some(c => c.toLowerCase().includes(query)))
+      );
+
+      if (!titleMatch && matchedItems.length === 0 && !mnemonicMatch && !procMatch && !tableMatch) return;
+      found = true;
+
+      html += `<div class="section-card">
+        <div class="section-header">
+          <span class="rotation-tag" style="margin-right:6px;">${rot.tag}</span>
+          <span>${sec.icon || '📌'}</span>
+          <span class="section-header-title">${sec.title}</span>
+        </div>
+        <div class="section-body">`;
+
+      if (matchedItems.length > 0) {
+        html += `<ul class="item-list">`;
+        matchedItems.forEach(item => {
+          const cls = item.type === 'danger' ? 'danger-item' : item.type === 'highlight' ? 'highlight' : item.type === 'info-item' ? 'info-item' : item.type === 'success-item' ? 'success-item' : '';
+          html += `<li class="${cls}"><div class="item-content">${item.text}</div></li>`;
+        });
+        html += `</ul>`;
+      } else if (titleMatch && sec.items) {
+        html += `<ul class="item-list">`;
+        sec.items.forEach(item => {
+          const cls = item.type === 'danger' ? 'danger-item' : item.type === 'highlight' ? 'highlight' : item.type === 'info-item' ? 'info-item' : '';
+          html += `<li class="${cls}"><div class="item-content">${item.text}</div></li>`;
+        });
+        html += `</ul>`;
+      }
+
+      if (sec.mnemonics) html += sec.mnemonics.map(m => renderMnemonic(m)).join('');
+      if (sec.procedures) html += sec.procedures.map(p => renderProcedure(p)).join('');
+      if (sec.table) html += renderTable(sec.table);
+
+      html += `</div></div>`;
+    });
+  });
+
+  if (!found) {
+    html += `<div class="empty-state"><div class="icon">🔎</div><p>No results found for "<strong>${query}</strong>"</p><p style="margin-top:8px;font-size:12px;">Try different keywords or clear your filter</p></div>`;
+  }
+
+  html += `</div>`;
+  content.innerHTML = html;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function renderMnemonic(m, rotIdx, secIdx, mnIdx, editable) {
+  const controls = editable !== false ? `
+    <div class="mnemonic-box-controls">
+      <button class="action-btn" onclick="editMnemonic(${rotIdx},${secIdx},${mnIdx})" title="Edit">✎</button>
+      <button class="action-btn" onclick="deleteMnemonic(${rotIdx},${secIdx},${mnIdx})" title="Delete">🗑️</button>
+    </div>` : '';
+  return `<div class="mnemonic-box">
+    ${controls}
+    <div class="mnemonic-title">${m.title}</div>
+    <div class="mnemonic-word">${m.word}</div>
+    <div class="mnemonic-breakdown">${m.letters.map(l => `<span>${l[0]}</span>${l[1]}<br/>`).join("")}</div>
+  </div>`;
+}
+
+function renderProcedure(p, rotIdx, secIdx, pIdx, editable) {
+  const controls = editable !== false ? `
+    <div class="procedure-block-controls">
+      <button class="action-btn" onclick="editProcedure(${rotIdx},${secIdx},${pIdx})" title="Edit">✎</button>
+      <button class="action-btn" onclick="deleteProcedure(${rotIdx},${secIdx},${pIdx})" title="Delete">🗑️</button>
+    </div>` : '';
+  return `<div class="procedure-block">
+    ${controls}
+    <div class="procedure-name">${p.name}</div>
+    <ol class="procedure-steps">${p.steps.map(s => `<li>${s}</li>`).join("")}</ol>
+  </div>`;
+}
+
+function renderTable(t) {
+  return `<div class="table-wrapper">
+    <table>
+      <thead><tr>${t.headers.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${t.rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>
+  </div>`;
+}
+
+const sectionTypeBadges = {
+  mnemonic: ['badge-mnemonic', '🧠 Mnemonic'],
+  lab: ['badge-lab', '🔬 Lab'],
+  procedure: ['badge-procedure', '🩺 Procedure'],
+  emergency: ['badge-emergency', '🚨 Emergency'],
+  'normal-values': ['badge-normal-values', '📊 Normal Values'],
+  tips: ['badge-tips', '💡 Tips'],
+  pharmacology: ['badge-mnemonic', '💊 Pharma'],
+};
+
+function renderNav() {
+  const nav = document.getElementById("rotationNav");
+  nav.innerHTML = rotations.map(r => `
+    <button class="nav-btn ${r.id === currentRotation ? 'active' : ''}" onclick="selectRotation('${r.id}')">${r.label}</button>
+  `).join("") + `<button class="nav-btn" onclick="openModal('addRotationModal')" title="Add rotation">＋</button>`;
+}
+
+function renderContent() {
+  if (searchQuery) { filterContent(searchQuery); return; }
+
+  const rotIdx = rotations.findIndex(r => r.id === currentRotation);
+  const rotation = rotations[rotIdx];
+  const content = document.getElementById("mainContent");
+
+  // Apply filter
+  const sections = rotation.sections.filter(sec => {
+    if (activeFilter === 'all') return true;
+    return sectionMatchesFilter(sec);
+  });
+
+  let html = `
+    <div class="rotation-title">
+      ${rotation.label}
+      <span class="rotation-tag">${rotation.tag}</span>
+      <button class="action-btn" onclick="renameRotation(${rotIdx})" title="Rename rotation" style="font-size:14px;">✎</button>
+      <button class="action-btn" onclick="deleteRotation(${rotIdx})" title="Delete rotation" style="font-size:14px;color:var(--text-danger)">🗑️</button>
+    </div>
+    <div class="rotation-subtitle" contenteditable="true" spellcheck="false"
+      onblur="saveSubtitle(${rotIdx}, this.textContent)">${rotation.subtitle}</div>
+    <div class="sections-grid" id="sectionsGrid">
+  `;
+
+  if (sections.length === 0) {
+    html += `<div class="empty-state"><div class="icon">🔎</div><p>No sections match the current filter.</p><p style="font-size:12px;margin-top:6px;">Try "All" or add a new section below.</p></div>`;
+  }
+
+  rotation.sections.forEach((sec, secIdx) => {
+    if (!sectionMatchesFilter(sec)) return;
+    
+    const badge = sectionTypeBadges[sec.sectionType];
+    const badgeHtml = badge ? `<span class="section-type-badge ${badge[0]}">${badge[1]}</span>` : '';
+
+    html += `
+      <div class="section-card" data-secidx="${secIdx}"
+           draggable="true"
+           ondragstart="dragStart(event, ${secIdx})"
+           ondragover="dragOver(event, this)"
+           ondragleave="dragLeave(this)"
+           ondrop="drop(event, ${secIdx}, this)">
+        <div class="section-header">
+          <span class="drag-handle" title="Drag to reorder">☰</span>
+          <span class="section-icon" onclick="changeIcon(${rotIdx},${secIdx})" title="Change icon">${sec.icon || '📌'}</span>
+          <span class="section-header-title" contenteditable="true" spellcheck="false"
+            onblur="saveSectionTitle(${rotIdx}, ${secIdx}, this.textContent)">${sec.title}</span>
+          ${badgeHtml}
+          <div class="section-controls">
+            <button class="action-btn" onclick="changeSectionType(${rotIdx},${secIdx})" title="Change section type">🏷</button>
+            <button class="action-btn" onclick="openAddContent(${rotIdx},${secIdx})" title="Add content">➕</button>
+            <button class="action-btn" onclick="toggleSection(this)" title="Collapse section">▾</button>
+            <button class="action-btn" onclick="deleteSection(${rotIdx}, ${secIdx})" title="Delete section" style="color:var(--text-danger)">🗑️</button>
+          </div>
+        </div>
+        <div class="section-body">
+    `;
+
+    if (sec.items && sec.items.length > 0) {
+      html += `<ul class="item-list">`;
+      sec.items.forEach((item, itemIdx) => {
+        const cls = item.type === 'danger' ? 'danger-item' : item.type === 'highlight' ? 'highlight' : item.type === 'info-item' ? 'info-item' : item.type === 'success-item' ? 'success-item' : '';
+        const prefix = item.type === 'checkbox' ? `<input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${rotIdx},${secIdx},${itemIdx})"> ` : '';
+        html += `<li class="${cls}"
+          oncontextmenu="showContextMenu(event,${rotIdx},${secIdx},${itemIdx})"
+          ondblclick="openEditModal(${rotIdx},${secIdx},${itemIdx})">
+          <div class="item-content">${prefix}${item.text}</div>
+          <div class="item-controls">
+            <button class="action-btn" onclick="openEditModal(${rotIdx},${secIdx},${itemIdx})" title="Edit">✎</button>
+            <button class="action-btn" onclick="moveItemUp(${rotIdx},${secIdx},${itemIdx})" title="Move up">↑</button>
+            <button class="action-btn" onclick="moveItemDown(${rotIdx},${secIdx},${itemIdx})" title="Move down">↓</button>
+            <button class="action-btn" onclick="deleteItem(${rotIdx},${secIdx},${itemIdx})" title="Delete" style="color:var(--text-danger)">🗑️</button>
+          </div>
+        </li>`;
+      });
+      html += `</ul>`;
+    }
+
+    if (sec.mnemonics) {
+      html += sec.mnemonics.map((m, mIdx) => renderMnemonic(m, rotIdx, secIdx, mIdx, true)).join('');
+    }
+    if (sec.procedures) {
+      html += sec.procedures.map((p, pIdx) => renderProcedure(p, rotIdx, secIdx, pIdx, true)).join('');
+    }
+    if (sec.table) html += renderTable(sec.table);
+
+    html += `</div></div>`;
+  });
+
+  html += `</div>
+    <button class="add-section-btn" onclick="openAddSectionModal(${rotIdx})">
+      ➕ Add New Section
+    </button>`;
+
+  content.innerHTML = html;
+}
+
+// ============================================================
+// DRAG & DROP
+// ============================================================
+function dragStart(e, index) {
+  draggedSectionIndex = index;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+function dragOver(e, el) {
+  e.preventDefault();
+  el.classList.add('drag-over');
+}
+function dragLeave(el) { el.classList.remove('drag-over'); }
+function drop(e, dropIndex, el) {
+  e.preventDefault();
+  el.classList.remove('drag-over');
+  const draggingEl = document.querySelector('.dragging');
+  if (draggingEl) draggingEl.classList.remove('dragging');
+  if (draggedSectionIndex === dropIndex) return;
+  const rotIdx = rotations.findIndex(r => r.id === currentRotation);
+  const sections = rotations[rotIdx].sections;
+  const item = sections.splice(draggedSectionIndex, 1)[0];
+  sections.splice(dropIndex, 0, item);
+  saveState();
+}
+
+// ============================================================
+// CONTEXT MENU
+// ============================================================
+function showContextMenu(e, rotIdx, secIdx, itemIdx) {
+  e.preventDefault();
+  ctxTarget = { rotIdx, secIdx, itemIdx };
+  const menu = document.getElementById('contextMenu');
+  menu.style.display = 'block';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+}
+function hideContextMenu() { document.getElementById('contextMenu').style.display = 'none'; ctxTarget = null; }
+document.addEventListener('click', hideContextMenu);
+
+function ctxAction(action) {
+  if (!ctxTarget) return;
+  const { rotIdx, secIdx, itemIdx } = ctxTarget;
+  hideContextMenu();
+  if (action === 'edit') openEditModal(rotIdx, secIdx, itemIdx);
+  else if (action === 'delete') deleteItem(rotIdx, secIdx, itemIdx);
+  else if (action === 'moveUp') moveItemUp(rotIdx, secIdx, itemIdx);
+  else if (action === 'moveDown') moveItemDown(rotIdx, secIdx, itemIdx);
+  else if (action === 'type') openEditModal(rotIdx, secIdx, itemIdx);
+}
+
+// ============================================================
+// SECTION ACTIONS
+// ============================================================
+function toggleSection(btn) {
+  const body = btn.closest('.section-card').querySelector('.section-body');
+  body.classList.toggle('collapsed');
+  btn.textContent = body.classList.contains('collapsed') ? '▸' : '▾';
+}
+
+function saveSectionTitle(rotIdx, secIdx, text) {
+  rotations[rotIdx].sections[secIdx].title = text.trim() || 'Untitled Section';
+  saveState();
+}
+
+function saveSubtitle(rotIdx, text) {
+  rotations[rotIdx].subtitle = text;
+  saveState();
+}
+
+function changeSectionType(rotIdx, secIdx) {
+  const types = ['', 'emergency', 'mnemonic', 'procedure', 'lab', 'normal-values', 'tips', 'pharmacology'];
+  const labels = ['General', 'Emergency', 'Mnemonics', 'Procedures', 'Labs', 'Normal Values', 'Tips', 'Pharmacology'];
+  const current = rotations[rotIdx].sections[secIdx].sectionType || '';
+  const currentIdx = types.indexOf(current);
+  const next = (currentIdx + 1) % types.length;
+  rotations[rotIdx].sections[secIdx].sectionType = types[next];
+  showToast(`Section type: ${labels[next]}`, '');
+  saveState();
+}
+
+function changeIcon(rotIdx, secIdx) {
+  const icon = prompt('Enter new emoji icon:', rotations[rotIdx].sections[secIdx].icon || '📌');
+  if (icon !== null) {
+    rotations[rotIdx].sections[secIdx].icon = icon.trim() || '📌';
+    saveState();
+  }
+}
+
+function deleteSection(rotIdx, secIdx) {
+  if (!confirm('Delete this entire section?')) return;
+  const sec = rotations[rotIdx].sections.splice(secIdx, 1)[0];
+  trash.push({ type: 'section', data: sec, source: { rotIdx }, label: sec.title, timestamp: Date.now() });
+  saveState();
+  showToast('Section deleted. Check Trash to recover.', '');
+}
+
+function renameRotation(rotIdx) {
+  const label = prompt('Rotation name:', rotations[rotIdx].label);
+  if (label) {
+    rotations[rotIdx].label = label.trim();
+    const tag = prompt('Short tag (e.g. IM):', rotations[rotIdx].tag);
+    if (tag) rotations[rotIdx].tag = tag.trim().toUpperCase().substring(0, 6);
+    saveState();
+  }
+}
+
+function deleteRotation(rotIdx) {
+  if (rotations.length <= 1) { showToast('Cannot delete the only rotation.', 'error'); return; }
+  if (!confirm(`Delete the "${rotations[rotIdx].label}" rotation?`)) return;
+  const rot = rotations.splice(rotIdx, 1)[0];
+  trash.push({ type: 'rotation', data: rot, label: rot.label, timestamp: Date.now() });
+  currentRotation = rotations[0].id;
+  saveState();
+  showToast('Rotation deleted. Check Trash to recover.', '');
+}
+
+function openAddSectionModal(rotIdx) {
+  currentAddTarget = { rotIdx };
+  document.getElementById('newSectionTitle').value = '';
+  document.getElementById('newSectionIcon').value = '';
+  document.getElementById('newSectionType').value = '';
+  openModal('addSectionModal');
+}
+
+function confirmAddSection() {
+  const title = document.getElementById('newSectionTitle').value.trim();
+  if (!title) { showToast('Please enter a section title.', 'error'); return; }
+  const icon = document.getElementById('newSectionIcon').value.trim() || '📌';
+  const sectionType = document.getElementById('newSectionType').value;
+  rotations[currentAddTarget.rotIdx].sections.push({ title, icon, sectionType, items: [] });
+  saveState();
+  closeModal('addSectionModal');
+}
+
+function confirmAddRotation() {
+  const label = document.getElementById('newRotLabel').value.trim();
+  const tag = document.getElementById('newRotTag').value.trim().toUpperCase();
+  const subtitle = document.getElementById('newRotSubtitle').value.trim();
+  if (!label || !tag) { showToast('Label and tag are required.', 'error'); return; }
+  const id = label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+  rotations.push({ id, label, tag, subtitle: subtitle || label, sections: [] });
+  currentRotation = id;
+  saveState();
+  closeModal('addRotationModal');
+}
+
+// ============================================================
+// ITEM ACTIONS
+// ============================================================
+function openAddContent(rotIdx, secIdx) {
+  currentEditTarget = { rotIdx, secIdx, itemIdx: null };
+  currentAddTarget = { rotIdx, secIdx };
+  openModal('addContentModal');
+}
+
+function openAddModal(rotIdx, secIdx) {
+  currentEditTarget = { rotIdx, secIdx, itemIdx: null };
+  document.getElementById('modalTitle').textContent = 'Add New Item';
+  document.getElementById('modalText').value = '';
+  document.getElementById('modalType').value = '';
+  openModal('editModal');
+}
+
+function openEditModal(rotIdx, secIdx, itemIdx) {
+  currentEditTarget = { rotIdx, secIdx, itemIdx };
+  const item = rotations[rotIdx].sections[secIdx].items[itemIdx];
+  document.getElementById('modalTitle').textContent = 'Edit Item';
+  document.getElementById('modalText').value = item.text;
+  document.getElementById('modalType').value = item.type || '';
+  openModal('editModal');
+}
+
+function saveModalContent() {
+  const text = document.getElementById('modalText').value.trim();
+  const type = document.getElementById('modalType').value;
+  if (!text) { showToast('Content cannot be empty!', 'error'); return; }
+  const { rotIdx, secIdx, itemIdx } = currentEditTarget;
+  if (!rotations[rotIdx].sections[secIdx].items) rotations[rotIdx].sections[secIdx].items = [];
+  if (itemIdx === null) {
+    rotations[rotIdx].sections[secIdx].items.push({ text, type });
+  } else {
+    rotations[rotIdx].sections[secIdx].items[itemIdx].text = text;
+    rotations[rotIdx].sections[secIdx].items[itemIdx].type = type;
+  }
+  saveState();
+  closeModal('editModal');
+}
+
+function deleteItem(rotIdx, secIdx, itemIdx) {
+  const item = rotations[rotIdx].sections[secIdx].items.splice(itemIdx, 1)[0];
+  trash.push({ type: 'item', data: item, source: { rotIdx, secIdx }, label: item.text.substring(0, 40), timestamp: Date.now() });
+  saveState();
+}
+
+function moveItemUp(rotIdx, secIdx, itemIdx) {
+  if (itemIdx === 0) return;
+  const items = rotations[rotIdx].sections[secIdx].items;
+  [items[itemIdx - 1], items[itemIdx]] = [items[itemIdx], items[itemIdx - 1]];
+  saveState();
+}
+
+function moveItemDown(rotIdx, secIdx, itemIdx) {
+  const items = rotations[rotIdx].sections[secIdx].items;
+  if (itemIdx >= items.length - 1) return;
+  [items[itemIdx], items[itemIdx + 1]] = [items[itemIdx + 1], items[itemIdx]];
+  saveState();
+}
+
+function toggleCheck(rotIdx, secIdx, itemIdx) {
+  rotations[rotIdx].sections[secIdx].items[itemIdx].checked = !rotations[rotIdx].sections[secIdx].items[itemIdx].checked;
+  saveState();
+}
+
+// ============================================================
+// MNEMONIC ACTIONS
+// ============================================================
+function saveMnemonic() {
+  const title = document.getElementById('mnTitle').value.trim();
+  const word = document.getElementById('mnWord').value.trim();
+  const rawBreakdown = document.getElementById('mnBreakdown').value.trim();
+  if (!title || !word || !rawBreakdown) { showToast('All fields are required.', 'error'); return; }
+  
+  const letters = rawBreakdown.split('\n').map(line => {
+    const sep = line.indexOf('—');
+    if (sep > -1) return [line.substring(0, sep).trim(), line.substring(sep + 1).trim()];
+    return [line[0] || '?', line.substring(1).trim()];
+  });
+
+  const { rotIdx, secIdx } = currentAddTarget;
+  if (!rotations[rotIdx].sections[secIdx].mnemonics) rotations[rotIdx].sections[secIdx].mnemonics = [];
+  rotations[rotIdx].sections[secIdx].mnemonics.push({ title, word, letters });
+  saveState();
+  closeModal('mnemonicModal');
+}
+
+function editMnemonic(rotIdx, secIdx, mnIdx) {
+  const m = rotations[rotIdx].sections[secIdx].mnemonics[mnIdx];
+  currentAddTarget = { rotIdx, secIdx };
+  document.getElementById('mnTitle').value = m.title;
+  document.getElementById('mnWord').value = m.word;
+  document.getElementById('mnBreakdown').value = m.letters.map(l => `${l[0]} — ${l[1]}`).join('\n');
+  openModal('mnemonicModal');
+  // Temporarily override save to edit instead of add
+  const saveBtn = document.querySelector('#mnemonicModal .toolbar-btn.primary');
+  saveBtn.onclick = () => {
+    const title = document.getElementById('mnTitle').value.trim();
+    const word = document.getElementById('mnWord').value.trim();
+    const rawBreakdown = document.getElementById('mnBreakdown').value.trim();
+    const letters = rawBreakdown.split('\n').map(line => {
+      const sep = line.indexOf('—');
+      return sep > -1 ? [line.substring(0, sep).trim(), line.substring(sep + 1).trim()] : [line[0] || '?', line.substring(1).trim()];
+    });
+    rotations[rotIdx].sections[secIdx].mnemonics[mnIdx] = { title, word, letters };
+    saveState();
+    closeModal('mnemonicModal');
+    saveBtn.onclick = saveMnemonic;
+  };
+}
+
+function deleteMnemonic(rotIdx, secIdx, mnIdx) {
+  if (!confirm('Delete this mnemonic?')) return;
+  rotations[rotIdx].sections[secIdx].mnemonics.splice(mnIdx, 1);
+  saveState();
+}
+
+// ============================================================
+// PROCEDURE ACTIONS
+// ============================================================
+function saveProcedure() {
+  const name = document.getElementById('procName').value.trim();
+  const rawSteps = document.getElementById('procSteps').value.trim();
+  if (!name || !rawSteps) { showToast('Name and steps are required.', 'error'); return; }
+  const steps = rawSteps.split('\n').map(s => s.trim()).filter(Boolean);
+  const { rotIdx, secIdx } = currentAddTarget;
+  if (!rotations[rotIdx].sections[secIdx].procedures) rotations[rotIdx].sections[secIdx].procedures = [];
+  rotations[rotIdx].sections[secIdx].procedures.push({ name, steps });
+  saveState();
+  closeModal('procedureModal');
+}
+
+function editProcedure(rotIdx, secIdx, pIdx) {
+  const p = rotations[rotIdx].sections[secIdx].procedures[pIdx];
+  currentAddTarget = { rotIdx, secIdx };
+  document.getElementById('procName').value = p.name;
+  document.getElementById('procSteps').value = p.steps.join('\n');
+  openModal('procedureModal');
+  const saveBtn = document.querySelector('#procedureModal .toolbar-btn.primary');
+  saveBtn.onclick = () => {
+    const name = document.getElementById('procName').value.trim();
+    const steps = document.getElementById('procSteps').value.trim().split('\n').map(s => s.trim()).filter(Boolean);
+    rotations[rotIdx].sections[secIdx].procedures[pIdx] = { name, steps };
+    saveState();
+    closeModal('procedureModal');
+    saveBtn.onclick = saveProcedure;
+  };
+}
+
+function deleteProcedure(rotIdx, secIdx, pIdx) {
+  if (!confirm('Delete this procedure?')) return;
+  rotations[rotIdx].sections[secIdx].procedures.splice(pIdx, 1);
+  saveState();
+}
+
+// ============================================================
+// TABLE ACTIONS
+// ============================================================
+function saveTable() {
+  const rawHeaders = document.getElementById('tableHeaders').value.trim();
+  const rawRows = document.getElementById('tableRows').value.trim();
+  if (!rawHeaders || !rawRows) { showToast('Headers and rows are required.', 'error'); return; }
+  const headers = rawHeaders.split(',').map(h => h.trim());
+  const rows = rawRows.split('\n').map(r => r.split(',').map(c => c.trim()));
+  const { rotIdx, secIdx } = currentAddTarget;
+  rotations[rotIdx].sections[secIdx].table = { headers, rows };
+  saveState();
+  closeModal('tableModal');
+}
+
+// ============================================================
+// TRASH
+// ============================================================
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+});
+
+function openTrashModal() {
+  const container = document.getElementById('trashContent');
+  if (trash.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🗑️</div><p>Trash is empty</p></div>';
+  } else {
+    container.innerHTML = trash.slice().reverse().map((t, revIdx) => {
+      const realIdx = trash.length - 1 - revIdx;
+      const date = new Date(t.timestamp || Date.now()).toLocaleTimeString();
+      return `<div style="background:var(--bg-secondary);padding:10px 12px;margin-bottom:6px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;background:var(--bg-tertiary);padding:1px 6px;border-radius:4px;margin-right:6px;">${t.type.toUpperCase()}</span>
+          <span style="font-size:13px;">${t.label || t.data?.title || 'Item'}</span>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${date}</div>
+        </div>
+        <button class="toolbar-btn" onclick="recoverTrash(${realIdx})">↩ Recover</button>
+      </div>`;
+    }).join('');
+  }
+  openModal('trashModal');
+}
+
+function recoverTrash(index) {
+  const t = trash.splice(index, 1)[0];
+  if (t.type === 'item') {
+    if (!rotations[t.source.rotIdx]?.sections[t.source.secIdx]?.items) return;
+    rotations[t.source.rotIdx].sections[t.source.secIdx].items.push(t.data);
+  } else if (t.type === 'section') {
+    rotations[t.source.rotIdx]?.sections.push(t.data);
+  } else if (t.type === 'rotation') {
+    rotations.push(t.data);
+    currentRotation = t.data.id;
+  }
+  saveState();
+  openTrashModal();
+  showToast('Item recovered!', 'success');
+}
+
+function emptyTrash() {
+  if (!confirm('Permanently delete all items in trash?')) return;
+  trash = [];
+  localStorage.setItem('clerkshipTrashV3', JSON.stringify(trash));
+  openTrashModal();
+  showToast('Trash emptied.', '');
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportData() {
+  const payload = { rotations, trash, exportedAt: new Date().toISOString(), version: 3 };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'clerkship_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('💾 Backup downloaded!', 'success');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm('Import this backup? Current data will be replaced.')) return;
+      if (data.rotations) {
+        rotations = data.rotations;
+        if (data.trash) trash = data.trash;
+        localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
+        localStorage.setItem('clerkshipTrashV3', JSON.stringify(trash));
+        history = [JSON.stringify(rotations)];
+        historyIndex = 0;
+        currentRotation = rotations[0].id;
+        renderNav();
+        renderContent();
+        pushToFirestore();
+        showToast('✅ Data imported successfully!', 'success');
+      } else {
+        showToast('Invalid backup file format.', 'error');
+      }
+    } catch {
+      showToast('Failed to parse backup file.', 'error');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+function showToast(msg, type = '') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type ? ' ' + type : '');
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 2800);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function selectRotation(id) {
+  currentRotation = id;
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearSearchBtn').style.display = 'none';
+  renderNav();
+  renderContent();
+}
+
+// Handle hash navigation
+if (location.hash) {
+  const id = location.hash.slice(1);
+  if (rotations.some(r => r.id === id)) currentRotation = id;
+}
+
+// ============================================================
+// INITIALIZE
+// ============================================================
+updateToolbar();
+renderNav();
+renderContent();
+
+// Overide trashModal button to use our function
+document.querySelector('[onclick="openModal(\'trashModal\')"]') && 
+  document.querySelector('[onclick="openModal(\'trashModal\')"]').addEventListener('click', e => {
+    e.stopPropagation(); openTrashModal();
+  });
+</script>
+</body>
+</html>
