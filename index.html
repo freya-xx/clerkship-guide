@@ -16,40 +16,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap">
 
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-  // ============================================================
-  // PASTE YOUR FIREBASE CONFIG HERE
-  // (Replace all values below with your own from Firebase Console)
-  // ============================================================
+<!-- Firebase Realtime Database SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
   const firebaseConfig = {
-  apiKey: "AIzaSyBItwKxbtYqduTIAypYYn5vgOU5KAWrxz8",
-  authDomain: "clerkie-cecaf.firebaseapp.com",
-  databaseURL: "https://clerkie-cecaf-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "clerkie-cecaf",
-  storageBucket: "clerkie-cecaf.firebasestorage.app",
-  messagingSenderId: "815043681005",
-  appId: "1:815043681005:web:295ecb33aacc5f5e614ae4"
-};
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
-
-  // Enable offline persistence
-  enableIndexedDbPersistence(db).catch(err => {
-    if (err.code === 'failed-precondition') console.warn('Persistence failed: multiple tabs open');
-    else if (err.code === 'unimplemented') console.warn('Browser does not support persistence');
-  });
-
-  // Expose to global scope
-  window._firebase = { db, auth, doc, setDoc, getDoc, onSnapshot, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged };
+    apiKey: "AIzaSyBItwKxbtYqduTIAypYYn5vgOU5KAWrxz8",
+    authDomain: "clerkie-cecaf.firebaseapp.com",
+    databaseURL: "https://clerkie-cecaf-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "clerkie-cecaf",
+    storageBucket: "clerkie-cecaf.firebasestorage.app",
+    messagingSenderId: "815043681005",
+    appId: "1:815043681005:web:295ecb33aacc5f5e614ae4"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window._rtdb = firebase.database();
   window._firebaseReady = true;
-  document.dispatchEvent(new Event('firebaseReady'));
 </script>
 
 <style>
@@ -796,14 +778,6 @@ tr:hover td { background: var(--bg-secondary); }
   <button class="toolbar-btn" onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
 </div>
 
-<!-- Auth Banner (shown when not logged in) -->
-<div class="auth-banner" id="authBanner" style="display:none;">
-  <span>🔒 Sign in to sync across your devices</span>
-  <button onclick="openModal('authModal')">Sign In / Sign Up</button>
-  <span style="flex:1"></span>
-  <span style="cursor:pointer" onclick="document.getElementById('authBanner').style.display='none'">✕</span>
-</div>
-
 <!-- Global Toolbar -->
 <div class="global-toolbar">
   <button class="toolbar-btn" id="btnUndo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
@@ -812,9 +786,6 @@ tr:hover td { background: var(--bg-secondary); }
   <button class="toolbar-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌓 Theme</button>
   <span class="toolbar-spacer"></span>
   <div class="sync-status local" id="syncStatus">⬤ Local</div>
-  <button class="toolbar-btn" onclick="manualSync()" id="syncBtn" title="Sync to cloud" style="display:none;">☁️ Sync to Cloud</button>
-  <button class="toolbar-btn danger-btn" onclick="signOutUser()" id="signOutBtn" style="display:none;">🚪 Sign Out</button>
-  <button class="toolbar-btn" onclick="openModal('authModal')" id="authBtn">👤 Sign In</button>
   <button class="toolbar-btn" onclick="exportData()" title="Download backup JSON">💾 Backup</button>
   <button class="toolbar-btn" onclick="document.getElementById('importFile').click()" title="Import backup">📂 Import</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
@@ -870,24 +841,6 @@ tr:hover td { background: var(--bg-secondary); }
 </div>
 
 <!-- ==================== MODALS ==================== -->
-
-<!-- Auth Modal -->
-<div class="modal-overlay" id="authModal">
-  <div class="modal">
-    <h3 id="authModalTitle">🔐 Sign In to Sync</h3>
-    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Your data will sync automatically across all your devices.</p>
-    <label>Email</label>
-    <input type="email" id="authEmail" placeholder="you@example.com">
-    <label>Password</label>
-    <input type="password" id="authPassword" placeholder="Your password">
-    <div id="authError" style="color:var(--text-danger);font-size:12px;margin-top:6px;display:none;"></div>
-    <div class="modal-btns">
-      <button class="toolbar-btn" onclick="closeModal('authModal')">Cancel</button>
-      <button class="toolbar-btn" onclick="switchAuthMode()" id="switchAuthBtn">Sign Up instead</button>
-      <button class="toolbar-btn primary" onclick="doAuth()" id="authSubmitBtn">Sign In</button>
-    </div>
-  </div>
-</div>
 
 <!-- Edit Item Modal -->
 <div class="modal-overlay" id="editModal">
@@ -1384,9 +1337,6 @@ let currentEditTarget = null;
 let currentAddTarget = null;
 let ctxTarget = null;
 let deferredPrompt = null;
-let currentUser = null;
-let firestoreUnsub = null;
-let isSyncing = false;
 let appTitle = localStorage.getItem('clerkshipTitle') || 'Clerkship Rotation Guide';
 
 // ============================================================
@@ -1418,30 +1368,11 @@ if ('serviceWorker' in navigator) {
 }
 
 // ============================================================
-// FIREBASE AUTH & SYNC
+// REALTIME DATABASE SYNC (no login required)
 // ============================================================
-document.addEventListener('firebaseReady', () => {
-  const { auth, onAuthStateChanged } = window._firebase;
-
-  onAuthStateChanged(auth, user => {
-    currentUser = user;
-    if (user) {
-      document.getElementById('authBtn').style.display = 'none';
-      document.getElementById('signOutBtn').style.display = 'flex';
-      document.getElementById('syncBtn').style.display = 'flex';
-      document.getElementById('authBanner').style.display = 'none';
-      setSyncStatus('syncing');
-      startFirestoreSync(user.uid);
-    } else {
-      document.getElementById('authBtn').style.display = 'flex';
-      document.getElementById('signOutBtn').style.display = 'none';
-      document.getElementById('syncBtn').style.display = 'none';
-      document.getElementById('authBanner').style.display = 'flex';
-      setSyncStatus('local');
-      if (firestoreUnsub) { firestoreUnsub(); firestoreUnsub = null; }
-    }
-  });
-});
+const SYNC_PATH = 'clerkshipData';
+let rtdbRef = null;
+let isRemoteUpdate = false;
 
 function setSyncStatus(state) {
   const el = document.getElementById('syncStatus');
@@ -1452,130 +1383,60 @@ function setSyncStatus(state) {
   else el.innerHTML = '⬤ Local';
 }
 
-function startFirestoreSync(uid) {
-  if (!window._firebaseReady) return;
-  const { db, doc, onSnapshot } = window._firebase;
+function startRTDBSync() {
+  if (!window._firebaseReady || !window._rtdb) return;
+  rtdbRef = window._rtdb.ref(SYNC_PATH);
 
-  // Check if this is placeholder config
-  if (doc.toString().includes('YOUR_API_KEY') || !uid) return;
-
-  try {
-    const ref = doc(db, 'users', uid, 'data', 'rotations');
-    firestoreUnsub = onSnapshot(ref, snap => {
-      if (snap.exists()) {
-        const remote = snap.data();
-        if (remote.rotations && remote.updatedAt > (localStorage.getItem('clerkshipLocalTime') || 0)) {
-          rotations = remote.rotations;
-          localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
-          history = [JSON.stringify(rotations)];
-          historyIndex = 0;
-          renderNav();
-          renderContent();
-          setSyncStatus('synced');
-        } else {
-          pushToFirestore();
-        }
-      } else {
-        pushToFirestore();
-      }
-    }, err => {
-      console.warn('Firestore sync error:', err);
-      setSyncStatus('offline');
-    });
-  } catch(e) {
-    console.warn('Firestore not configured:', e);
-    setSyncStatus('local');
-  }
-}
-
-function pushToFirestore() {
-  if (!currentUser || !window._firebaseReady) return;
-  const { db, doc, setDoc } = window._firebase;
-  
-  // Check placeholder
-  if (!currentUser.uid) return;
-
-  isSyncing = true;
-  setSyncStatus('syncing');
-  const now = Date.now();
-  localStorage.setItem('clerkshipLocalTime', now);
-  
-  try {
-    const ref = doc(db, 'users', currentUser.uid, 'data', 'rotations');
-    setDoc(ref, { rotations, updatedAt: now }).then(() => {
+  // Listen for remote changes and apply them locally
+  rtdbRef.on('value', snap => {
+    if (isRemoteUpdate) return; // skip echoes of our own writes
+    const remote = snap.val();
+    if (remote && remote.rotations) {
+      rotations = remote.rotations;
+      localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
+      history = [JSON.stringify(rotations)];
+      historyIndex = 0;
+      renderNav();
+      renderContent();
       setSyncStatus('synced');
-      isSyncing = false;
-    }).catch(err => {
-      console.warn('Push failed:', err);
-      setSyncStatus('offline');
-      isSyncing = false;
-    });
-  } catch(e) {
-    setSyncStatus('local');
-    isSyncing = false;
-  }
-}
-
-// ============================================================
-// AUTH MODAL LOGIC
-// ============================================================
-let authMode = 'signin';
-
-function switchAuthMode() {
-  authMode = authMode === 'signin' ? 'signup' : 'signin';
-  document.getElementById('authModalTitle').textContent = authMode === 'signin' ? '🔐 Sign In to Sync' : '🔐 Create Account';
-  document.getElementById('authSubmitBtn').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
-  document.getElementById('switchAuthBtn').textContent = authMode === 'signin' ? 'Sign Up instead' : 'Sign In instead';
-  document.getElementById('authError').style.display = 'none';
-}
-
-async function doAuth() {
-  if (!window._firebaseReady) {
-    showToast('⚠️ Firebase not configured yet. See setup guide.', 'error');
-    return;
-  }
-  const { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = window._firebase;
-  const email = document.getElementById('authEmail').value.trim();
-  const pass = document.getElementById('authPassword').value;
-  const errEl = document.getElementById('authError');
-  errEl.style.display = 'none';
-
-  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = 'block'; return; }
-
-  try {
-    if (authMode === 'signin') {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } else {
-      await createUserWithEmailAndPassword(auth, email, pass);
     }
-    closeModal('authModal');
-    showToast('✅ Signed in! Syncing your data…', 'success');
-  } catch (err) {
-    errEl.textContent = err.message.replace('Firebase: ', '').replace(/\(auth\/.*\)/, '');
-    errEl.style.display = 'block';
-  }
+  }, err => {
+    console.warn('RTDB error:', err);
+    setSyncStatus('offline');
+  });
+
+  // Track connection state
+  window._rtdb.ref('.info/connected').on('value', snap => {
+    if (snap.val() === true) {
+      setSyncStatus('synced');
+    } else {
+      setSyncStatus('offline');
+    }
+  });
+
+  setSyncStatus('syncing');
 }
 
-async function signOutUser() {
-  if (!window._firebaseReady) return;
-  const { auth, signOut } = window._firebase;
-  await signOut(auth);
-  showToast('Signed out. Data saved locally.', '');
+function pushToRTDB() {
+  if (!window._firebaseReady || !rtdbRef) return;
+  isRemoteUpdate = true;
+  setSyncStatus('syncing');
+  rtdbRef.set({ rotations, updatedAt: Date.now() })
+    .then(() => { setSyncStatus('synced'); isRemoteUpdate = false; })
+    .catch(err => { console.warn('RTDB push failed:', err); setSyncStatus('offline'); isRemoteUpdate = false; });
 }
 
-function manualSync() {
-  if (!currentUser) {
-    openModal('authModal');
-    showToast('Please sign in to sync to cloud.', '');
-    return;
+// Start sync immediately on load
+window.addEventListener('load', () => {
+  if (window._firebaseReady) {
+    startRTDBSync();
+  } else {
+    // poll briefly in case SDK hasn't loaded yet
+    const t = setInterval(() => {
+      if (window._firebaseReady) { clearInterval(t); startRTDBSync(); }
+    }, 200);
   }
-  if (!window._firebaseReady) {
-    showToast('Firebase not ready. Try again.', 'error');
-    return;
-  }
-  showToast('☁️ Syncing to cloud…', '');
-  pushToFirestore();
-}
+});
 
 // ============================================================
 // TITLE EDITING
@@ -1598,7 +1459,7 @@ function saveState() {
   updateToolbar();
   renderNav();
   renderContent();
-  pushToFirestore();
+  pushToRTDB();
 }
 
 function undo() {
@@ -1609,7 +1470,7 @@ function undo() {
     updateToolbar();
     renderNav();
     renderContent();
-    pushToFirestore();
+    pushToRTDB();
   }
 }
 
@@ -1621,7 +1482,7 @@ function redo() {
     updateToolbar();
     renderNav();
     renderContent();
-    pushToFirestore();
+    pushToRTDB();
   }
 }
 
@@ -2327,7 +2188,7 @@ function importData(e) {
         currentRotation = rotations[0].id;
         renderNav();
         renderContent();
-        pushToFirestore();
+        pushToRTDB();
         showToast('✅ Data imported successfully!', 'success');
       } else {
         showToast('Invalid backup file format.', 'error');
