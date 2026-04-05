@@ -813,6 +813,7 @@ tr:hover td { background: var(--bg-secondary); }
   <span class="toolbar-spacer"></span>
   <div class="sync-status local" id="syncStatus">⬤ Local</div>
   <button class="toolbar-btn" onclick="openModal('authModal')" id="authBtn">👤 Sign In</button>
+  <button class="toolbar-btn danger-btn" onclick="signOutUser()" id="signOutBtn" style="display:none;">👤 Sign Out</button>
   <button class="toolbar-btn" onclick="exportData()" title="Download backup JSON">💾 Backup</button>
   <button class="toolbar-btn" onclick="document.getElementById('importFile').click()" title="Import backup">📂 Import</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
@@ -1424,12 +1425,15 @@ document.addEventListener('firebaseReady', () => {
   onAuthStateChanged(auth, user => {
     currentUser = user;
     if (user) {
-      document.getElementById('authBtn').textContent = '👤 ' + (user.email.split('@')[0]);
+      document.getElementById('authBtn').style.display = 'none';
+      document.getElementById('signOutBtn').style.display = 'flex';
+      document.getElementById('signOutBtn').textContent = '👤 ' + (user.email.split('@')[0]) + ' · Sign Out';
       document.getElementById('authBanner').style.display = 'none';
       setSyncStatus('syncing');
       startFirestoreSync(user.uid);
     } else {
-      document.getElementById('authBtn').textContent = '👤 Sign In';
+      document.getElementById('authBtn').style.display = 'flex';
+      document.getElementById('signOutBtn').style.display = 'none';
       document.getElementById('authBanner').style.display = 'flex';
       setSyncStatus('local');
       if (firestoreUnsub) { firestoreUnsub(); firestoreUnsub = null; }
@@ -1458,7 +1462,7 @@ function startFirestoreSync(uid) {
     firestoreUnsub = onSnapshot(ref, snap => {
       if (snap.exists()) {
         const remote = snap.data();
-        if (remote.rotations && remote.updatedAt > (localStorage.getItem('clerkshipLocalTime') || 0)) {
+        if (remote.rotations && remote.updatedAt > (Number(localStorage.getItem('clerkshipLocalTime')) || 0)) {
           rotations = remote.rotations;
           localStorage.setItem('clerkshipDataV3', JSON.stringify(rotations));
           history = [JSON.stringify(rotations)];
