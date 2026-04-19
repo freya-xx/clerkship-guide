@@ -16,7 +16,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap">
 
-<!-- Firebase Realtime Database SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
@@ -771,14 +770,12 @@ tr:hover td { background: var(--bg-secondary); }
 </head>
 <body>
 
-<!-- Install Banner -->
 <div class="install-banner" id="installBanner">
   📲 <strong>Install App</strong> — Get offline access on this device
   <button class="toolbar-btn primary" id="installBtn" onclick="installApp()">Install</button>
   <button class="toolbar-btn" onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
 </div>
 
-<!-- Global Toolbar -->
 <div class="global-toolbar">
   <button class="toolbar-btn" id="btnUndo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
   <button class="toolbar-btn" id="btnRedo" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
@@ -791,7 +788,6 @@ tr:hover td { background: var(--bg-secondary); }
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
 </div>
 
-<!-- Header -->
 <div class="header">
   <div class="header-text">
     <h1 id="appTitle" contenteditable="true" spellcheck="false" onblur="saveTitle()">Clerkship Rotation Guide</h1>
@@ -799,7 +795,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Search + Filter Bar -->
 <div class="search-filter-bar">
   <div class="search-row">
     <div class="search-wrapper">
@@ -818,19 +813,16 @@ tr:hover td { background: var(--bg-secondary); }
     <button class="filter-pill" data-filter="normal-values" onclick="setFilter('normal-values')">📊 Normal Values</button>
     <button class="filter-pill" data-filter="tips" onclick="setFilter('tips')">💡 Tips</button>
     <button class="filter-pill" data-filter="pharmacology" onclick="setFilter('pharmacology')">💊 Pharmacology</button>
+    <button class="filter-pill" id="addFilterBtn" onclick="addCustomFilter()">➕ Add</button>
   </div>
 </div>
 
-<!-- Rotation Nav -->
 <div class="rotation-nav" id="rotationNav"></div>
 
-<!-- Main Content -->
 <div class="content" id="mainContent"></div>
 
-<!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- Context Menu -->
 <div class="context-menu" id="contextMenu" style="display:none">
   <div class="context-menu-item" onclick="ctxAction('edit')">✎ Edit</div>
   <div class="context-menu-item" onclick="ctxAction('type')">🎨 Change Type</div>
@@ -840,9 +832,6 @@ tr:hover td { background: var(--bg-secondary); }
   <div class="context-menu-item danger" onclick="ctxAction('delete')">🗑 Delete</div>
 </div>
 
-<!-- ==================== MODALS ==================== -->
-
-<!-- Edit Item Modal -->
 <div class="modal-overlay" id="editModal">
   <div class="modal">
     <h3 id="modalTitle">Add Item</h3>
@@ -864,7 +853,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Add Mnemonic Modal -->
 <div class="modal-overlay" id="mnemonicModal">
   <div class="modal">
     <h3>🧠 Add Mnemonic</h3>
@@ -881,7 +869,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Add Procedure Modal -->
 <div class="modal-overlay" id="procedureModal">
   <div class="modal">
     <h3>🩺 Add Procedure</h3>
@@ -896,7 +883,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Add Table Modal -->
 <div class="modal-overlay" id="tableModal">
   <div class="modal">
     <h3>📊 Add Table</h3>
@@ -911,7 +897,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Add Section Modal -->
 <div class="modal-overlay" id="addSectionModal">
   <div class="modal">
     <h3>➕ Add New Section</h3>
@@ -937,7 +922,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Trash Modal -->
 <div class="modal-overlay" id="trashModal">
   <div class="modal modal-lg">
     <h3>🗑️ Trash</h3>
@@ -949,7 +933,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Add Rotation Modal -->
 <div class="modal-overlay" id="addRotationModal">
   <div class="modal">
     <h3>➕ Add Rotation</h3>
@@ -966,7 +949,6 @@ tr:hover td { background: var(--bg-secondary); }
   </div>
 </div>
 
-<!-- Section Add Content Menu -->
 <div class="modal-overlay" id="addContentModal">
   <div class="modal">
     <h3>➕ Add to Section</h3>
@@ -1511,6 +1493,63 @@ if (localStorage.getItem('clerkshipTheme') === 'dark') document.body.classList.a
 // ============================================================
 // FILTER SYSTEM
 // ============================================================
+// ============================================================
+// CUSTOM FILTERS
+// ============================================================
+function loadCustomFilters() {
+  const customFilters = JSON.parse(localStorage.getItem('customFiltersV3')) || [];
+  const addBtn = document.getElementById('addFilterBtn');
+
+  // Clear existing custom filters from DOM to prevent duplicates
+  document.querySelectorAll('.custom-filter-pill').forEach(el => el.remove());
+
+  // Render custom filters in the filter bar
+  customFilters.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = `filter-pill custom-filter-pill ${activeFilter === f.id ? 'active' : ''}`;
+    btn.dataset.filter = f.id;
+    btn.onclick = () => setFilter(f.id);
+    btn.innerHTML = `${f.icon} ${f.label}`;
+    addBtn.parentNode.insertBefore(btn, addBtn);
+  });
+
+  // Update the "Add New Section" dropdown to include custom filters
+  const select = document.getElementById('newSectionType');
+  Array.from(select.options).forEach(opt => {
+    if (opt.classList.contains('custom-option')) opt.remove();
+  });
+  customFilters.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = `${f.icon} ${f.label}`;
+    opt.className = 'custom-option';
+    select.appendChild(opt);
+  });
+}
+
+function addCustomFilter() {
+  const filterName = prompt("Enter a name for your new category (e.g., Radiology):");
+  if (!filterName) return;
+  
+  // Create a safe ID string
+  const filterId = filterName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const filterIcon = prompt("Enter an emoji icon for this category (optional):", "📌") || "📌";
+
+  let customFilters = JSON.parse(localStorage.getItem('customFiltersV3')) || [];
+  
+  // Prevent adding duplicate filters
+  if (customFilters.some(f => f.id === filterId)) {
+    showToast('Filter already exists!', 'error');
+    return;
+  }
+  
+  customFilters.push({ id: filterId, label: filterName, icon: filterIcon });
+  localStorage.setItem('customFiltersV3', JSON.stringify(customFilters));
+
+  loadCustomFilters();
+  showToast('Custom filter added!', 'success');
+}
+
 function setFilter(filter) {
   activeFilter = filter;
   document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.filter === filter));
@@ -1710,7 +1749,18 @@ function renderContent() {
   rotation.sections.forEach((sec, secIdx) => {
     if (!sectionMatchesFilter(sec)) return;
     
-    const badge = sectionTypeBadges[sec.sectionType];
+    let badge = sectionTypeBadges[sec.sectionType];
+    
+    // Support custom filters badge fallback
+    if (!badge && sec.sectionType) {
+      const customFilters = JSON.parse(localStorage.getItem('customFiltersV3')) || [];
+      const customF = customFilters.find(f => f.id === sec.sectionType);
+      if (customF) {
+        // Reuse the generic grey 'badge-tips' styling for custom badges
+        badge = ['badge-tips', `${customF.icon} ${customF.label}`]; 
+      }
+    }
+    
     const badgeHtml = badge ? `<span class="section-type-badge ${badge[0]}">${badge[1]}</span>` : '';
 
     html += `
@@ -1848,6 +1898,14 @@ function saveSubtitle(rotIdx, text) {
 function changeSectionType(rotIdx, secIdx) {
   const types = ['', 'emergency', 'mnemonic', 'procedure', 'lab', 'normal-values', 'tips', 'pharmacology'];
   const labels = ['General', 'Emergency', 'Mnemonics', 'Procedures', 'Labs', 'Normal Values', 'Tips', 'Pharmacology'];
+  
+  // Include custom filters in the rotation cycle
+  const customFilters = JSON.parse(localStorage.getItem('customFiltersV3')) || [];
+  customFilters.forEach(f => {
+    types.push(f.id);
+    labels.push(f.label);
+  });
+
   const current = rotations[rotIdx].sections[secIdx].sectionType || '';
   const currentIdx = types.indexOf(current);
   const next = (currentIdx + 1) % types.length;
@@ -2240,6 +2298,7 @@ if (location.hash) {
 // INITIALIZE
 // ============================================================
 updateToolbar();
+loadCustomFilters(); // <-- Added to load custom filters on boot
 renderNav();
 renderContent();
 
