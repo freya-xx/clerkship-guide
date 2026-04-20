@@ -1350,9 +1350,24 @@ if ('serviceWorker' in navigator) {
 }
 
 // ============================================================
-// REALTIME DATABASE SYNC (no login required)
+// REALTIME DATABASE SYNC (Secured with Passcode)
 // ============================================================
-const SYNC_PATH = 'clerkshipData';
+// Get the passcode from local storage, or ask the user for one
+let syncPasscode = localStorage.getItem('clerkshipSyncPasscode');
+if (!syncPasscode) {
+  syncPasscode = prompt("🔒 Secure Sync\n\nEnter a secret passcode to sync your data. Use the exact same passcode on all your devices (e.g., MySecretApp123).");
+  if (syncPasscode) {
+    // Clean up the passcode to make it a safe database path
+    syncPasscode = syncPasscode.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+    localStorage.setItem('clerkshipSyncPasscode', syncPasscode);
+  } else {
+    // If they cancel, fall back to a local-only mode
+    syncPasscode = "offline_mode"; 
+  }
+}
+
+// Connect to the specific "room" using the passcode
+const SYNC_PATH = 'sync_rooms/' + syncPasscode;
 let rtdbRef = null;
 let isRemoteUpdate = false;
 
@@ -1366,7 +1381,7 @@ function setSyncStatus(state) {
 }
 
 function startRTDBSync() {
-  if (!window._firebaseReady || !window._rtdb) return;
+  if (!window._firebaseReady || !window._rtdb || syncPasscode === 'offline_mode') return;
   rtdbRef = window._rtdb.ref(SYNC_PATH);
 
   // Listen for remote changes and apply them locally
@@ -1400,7 +1415,7 @@ function startRTDBSync() {
 }
 
 function pushToRTDB() {
-  if (!window._firebaseReady || !rtdbRef) return;
+  if (!window._firebaseReady || !rtdbRef || syncPasscode === 'offline_mode') return;
   isRemoteUpdate = true;
   setSyncStatus('syncing');
   rtdbRef.set({ rotations, updatedAt: Date.now() })
@@ -2298,7 +2313,7 @@ if (location.hash) {
 // INITIALIZE
 // ============================================================
 updateToolbar();
-loadCustomFilters(); // <-- Added to load custom filters on boot
+loadCustomFilters();
 renderNav();
 renderContent();
 
